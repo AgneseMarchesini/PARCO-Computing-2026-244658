@@ -1,6 +1,3 @@
-%%MatrixMarket matrix coordinate real general
-3 3 4
-1 1 5.0
-2 2 2.0
-2 3 1.0
-3 3 3.0
+version https://git-lfs.github.com/spec/v1
+oid sha256:d7603822e9de34af58a7435d2f7f39357b199c6dcf6341971bff075226d37daa
+size 83
