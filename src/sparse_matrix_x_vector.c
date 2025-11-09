@@ -4,6 +4,8 @@
 #include <time.h>
 #include "matrix.h"
 #include <omp.h>
+#include <string.h>
+#include "timer.h"
 
 int compare_doubles(const void *a, const void *b) {
     double da = *(const double *)a;
@@ -15,21 +17,27 @@ int compare_doubles(const void *a, const void *b) {
 
 int main(int argc, char *argv[]) {
     
-    if (argc < 3) {
+    if (argc <4) {
         printf("Usage: %s matrix_file.mtx <mode> [num_runs]\n", argv[0]);
         printf("<mode>: seq, static, dynamic, guided\n");
         //[num_runs] is implemented to measure valgrind performance
         printf("[num_runs]: (optional) number of runs for benchmark, default: 10\n");
+        printf("Chunk size for OpenMP scheduling, default: 10\n");
         return 1;
     }
 
     char* matrix_file = argv[1];
     char* mode = argv[2];
-    int num_runs = 10;
-    if (argc == 4) {
+
+    int num_runs = 10; // Default number of runs
+    if (argc >= 4) {
         num_runs = atoi(argv[3]);
     }
 
+    int chunk_size = 10; // Default chunk size
+    if (argc >= 5){
+        chunk_size = atoi(argv[4]);
+    }
     SparseMatrixCSR matrix;
 
     matrix_load_from_mtx(argv[1], &matrix);
@@ -49,19 +57,43 @@ int main(int argc, char *argv[]) {
     // Benchmarking loop
     double total_sum = 0.0; // To prevent compiler optimization
     for(int i =0; i < num_runs; i++){
-        // Re-randomize v to avoid compiler optimization
         for(int j = 0; j < matrix.N; j++) {
-            v[j] = (double)(rand() % 10);
+            v[j] = (double)(rand() % 10);   // Re-randomize v to avoid compiler optimization
         }
 
-        start = omp_get_wtime();
-        matrix_vector_mul(&matrix, v, y);
-        end = omp_get_wtime();
-        times[i] = (end - start) * 1000.0; // milliseconds
-        printf("Run %d: %f milliseconds\n", i+1, times[i]);
+        for(int j = 0; j < matrix.M; j++) {
+            y[j] = 0.0;                     // Reset result vector y
+        }
+
+        if (strcmp(mode, "seq") == 0){
+            // Sequential execution
+            GET_TIME(start);
+            matrix_vector_mul_sequential(&matrix, v, y);
+            GET_TIME(end);
+            times[i] = (end - start) * 1000.0; // milliseconds
+            printf("Run %d: %f milliseconds\n", i+1, times[i]);
+        } else {
+            // Parallel execution
+            if(strcmp(mode, "static") == 0){
+                omp_set_schedule(omp_sched_static, chunk_size);
+            } else if(strcmp(mode, "dynamic") == 0){
+                omp_set_schedule(omp_sched_dynamic, chunk_size);
+            } else if(strcmp(mode, "guided") == 0){
+                omp_set_schedule(omp_sched_guided, chunk_size);
+            } else {
+                fprintf(stderr, "Unknown mode: %s\n", mode);
+                return 1;
+            }
+
+            GET_TIME(start);
+            matrix_vector_mul_parallel(&matrix, v, y);
+            GET_TIME(end);
+            times[i] = (end - start) * 1000.0; // milliseconds
+            printf("Run %d: %f milliseconds\n", i+1, times[i]);
+        }
 
         // Prevent compiler optimization (otherwise the time measurement are equal to 0)
-        for (int j = 0; j < matrix.N; j++) {
+        for (int j = 0; j < matrix.M; j++) {
             total_sum += y[j]; 
         }
     }
@@ -83,6 +115,9 @@ int main(int argc, char *argv[]) {
     int p90_index = (int)(0.9 * num_runs) - 1; // index for 90th percentile
 
     printf("\n90th percentile time: %f ms\n", times[p90_index]);
+
+    // Print to stderr to force the compiler to calculate total_sum.
+    fprintf(stderr, "Checksum: %f\n", total_sum);
 
     // Free memory
     matrix_free(&matrix);

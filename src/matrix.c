@@ -102,9 +102,20 @@ void matrix_free(SparseMatrixCSR* matrix) {
     free(matrix->val_pnt);
 }
 
-void matrix_vector_mul(const SparseMatrixCSR* matrix, const double* v, double* y) {
+void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v, double* y) {
     for (int i = 0; i < matrix->M; i++) {
-        y[i] = 0.0;
+        int start_index = matrix->row_pnt[i];
+        int end_index = matrix->row_pnt[i + 1];
+
+        for (int j = start_index; j < end_index; j++) {
+            y[i] += matrix->val_pnt[j] * v[matrix->col_pnt[j]];
+        }
+    }
+}
+
+void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, double* y){
+    #pragma omp parallel for default(none) shared(matrix, v, y) 
+    for (int i = 0; i < matrix->M; i++) {
         int start_index = matrix->row_pnt[i];
         int end_index = matrix->row_pnt[i + 1];
 

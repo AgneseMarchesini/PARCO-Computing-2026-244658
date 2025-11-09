@@ -20,6 +20,9 @@ int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix);
 void matrix_free(SparseMatrixCSR* matrix);
 
 // Multiply the sparse matrix by a dense vector
-void matrix_vector_mul(const SparseMatrixCSR* matrix, const double* v, double* y);
+void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v, double* y);
+
+// Multiply the sparse matrix by a dense vector in parallel
+void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, double* y);
 
 #endif
