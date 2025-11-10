@@ -2,12 +2,11 @@
 
 EXECUTABLE="./spmv"
 MATRICES=(
-    "twotone.mtx"
-    #"af23560.mtx"
-    #"fidapm11.mtx"
-    #"cfd2.mtx"
-    #"s3dkt3m2.mtx"
-    #"pwtk.mtx"
+    "af23560.mtx"
+    #"twotone.mtx"
+    #"tmt_unsym.mtx"
+    #"atmosmodl.mtx"
+    #"Freescale1.mtx"
 )
 DATA_DIR="data"
 MODES=(
@@ -16,11 +15,12 @@ MODES=(
     "dynamic"
     "guided"
 )
-CHUNK_SIZE=(1 10 100 1000 10000)
-THREADS=(1 2 4 8 16 32 64)
+CHUNK_SIZE=(1 10 100) # 1000 10000
+THREADS=(1 2 4) #8 16 32 64
 NUM_RUNS=10
 RESULTS_DIR="results"
 RESULTS_CSV="$RESULTS_DIR/benchmark_results.csv"
+TEMP_FILE="temp_times.txt"
 
 
 # Compile the program
@@ -36,9 +36,20 @@ do
     # Sequential version
     export OMP_NUM_THREADS=1
     echo "Running: $MATRIX_NAME, seq, NA, 1 thread" # matrix_name, mode, chunk_size, threads
+    
+    > $TEMP_FILE # Clear temp file
+    # Run sequential multiple times 
+    for (( r=1; r<=$NUM_RUNS; r++ ))
+    do
+        $EXECUTABLE $MATRIX_FILE seq 1 | grep "TIME:" | awk '{print $2}' >> $TEMP_FILE
+    done
 
-    OUTPUT_LINE=$($EXECUTABLE $MATRIX_FILE seq 10 1 | grep "90th percentile") # matrix_name, mode, num_runs, chunk_size
-    TIMES_MS=$(echo $OUTPUT_LINE | awk '{print $4}')
+    # Calculate 90th percentile for sequential runs
+    # sort -n sorts
+    # head -n 9 gets first 9 lines
+    # tail -n 1 gets the 9th run (90th percentile)
+    TIME_MS=$(sort -n $TEMP_FILE | head -n 9 | tail -n 1)
+    
     echo "$MATRIX_NAME,seq,NA,1,$TIMES_MS" >> $RESULTS_CSV
 
     # Loop over modes
@@ -54,15 +65,21 @@ do
 
                 echo "Running: $MATRIX_NAME, $MODE, $CHUNK, $T threads"
 
-                # Find the "90th percentile" line in the output
-                OUTPUT_LINE=$($EXECUTABLE $MATRIX_FILE $MODE $NUM_RUNS $CHUNK | grep "90th percentile")
+                # Run the parallel version multiple times like before
+                > $TEMP_FILE # Clear temp file
+                for (( r=1; r<=$NUM_RUNS; r++ ))
+                do
+                    $EXECUTABLE $MATRIX_FILE $MODE $CHUNK | grep "TIME:" | awk '{print $2}' >> $TEMP_FILE
+                done
 
-                TIMES_MS=$(echo $OUTPUT_LINE | awk '{print $4}')
+                TIME_MS=$(sort -n $TEMP_FILE | head -n 9 | tail -n 1)
 
                 echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$TIMES_MS" >> $RESULTS_CSV
             done
         done
     done
 done
+
+rm $TEMP_FILE
 
 echo "Data saved in $RESULTS_CSV"
