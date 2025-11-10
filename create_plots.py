@@ -2,61 +2,61 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from pathlib import Path
+import matplotlib.ticker as ticker 
 
 # --- Configuration ---
 RESULTS_DIR = Path("results")
 PLOTS_DIR = Path("plots")
 RESULTS_CSV = RESULTS_DIR / "benchmark_results.csv"
+CHUNK_SIZES_TO_PLOT = [1, 10, 100, 1000, 10000] 
+THREADS_TO_PLOT = [1, 2, 4, 8, 16, 32, 64]
 # --- End Configuration ---
 
 def calculate_speedup(df):
     """Calculates speedup based on sequential time for each matrix."""
-    # Find the single 'seq' time for each matrix
+    print("Calculating speedup...")
     seq_times = df[df["Mode"] == "seq"].set_index("Matrix")["Time_ms"]
-    
-    # Map this 'seq_time' to every row in the dataframe
     df["Seq_Time"] = df["Matrix"].map(seq_times)
-    
-    # Speedup = T_sequential / T_parallel
     df["Speedup"] = df["Seq_Time"] / df["Time_ms"]
     return df
 
 def plot_speedup_vs_threads(df, plots_dir):
     """
-    Plots Speedup vs. Threads for each matrix and chunk size.
-    This is the most important plot for your report.
+    Plots Speedup vs. Threads.
     """
     print("Generating Speedup vs. Threads plots...")
     
-    # We don't plot 'seq' here, as speedup is the focus
     parallel_df = df[df["Mode"] != "seq"].copy()
-    
-    # Get a list of all unique matrices
     matrices = parallel_df["Matrix"].unique()
     
     for matrix in matrices:
         matrix_df = parallel_df[parallel_df["Matrix"] == matrix]
         
-        # Use seaborn.relplot to create a faceted line plot
-        # col="ChunkSize" creates a new subplot for each chunk size
         g = sns.relplot(
             data=matrix_df,
             x="Threads",
             y="Speedup",
-            hue="Mode",         # Different color lines for static, dynamic, guided
-            style="Mode",       # Different markers for each mode
-            col="ChunkSize",    # New plot for each chunk size
+            hue="Mode",
+            style="Mode",
+            col="ChunkSize",
             kind="line",
             marker="o",
-            col_wrap=3          # Wrap to a new row after 3 subplots
+            height=5,
+            aspect=1.2
         )
         
-        # Set titles and layout
-        g.fig.suptitle(f"Speedup vs. Threads for {matrix}", y=1.03)
-        g.set(xscale='log', xticks=[1, 2, 4, 8, 16, 32, 64])
-        g.set_axis_labels("Threads (log scale)", "Speedup")
+        for ax in g.axes.flat:
+            ax.set_xscale('log')
+            ax.set_xticks(THREADS_TO_PLOT)
+            ax.set_xticklabels([str(t) for t in THREADS_TO_PLOT])
+            ax.set_xlabel("Threads (log scale)")
+            ax.set_ylabel("Speedup (T_seq / T_par)")
+            ax.grid(which='major', axis='both', linestyle='--', linewidth=0.5)
+            ax.grid(which='minor', axis='x', linestyle=':', linewidth=0.5)
         
-        # Save the plot
+        g.fig.suptitle(f"Speedup vs. Threads for {matrix}", y=1.05)
+        g.set_titles("ChunkSize = {col_name}")
+        
         plot_filename = plots_dir / f"speedup_{matrix.split('.')[0]}.png"
         g.savefig(plot_filename)
         plt.close(g.fig)
@@ -64,14 +64,18 @@ def plot_speedup_vs_threads(df, plots_dir):
 def plot_time_vs_threads(df, plots_dir):
     """
     Plots raw Time (ms) vs. Threads.
-    Useful for seeing the memory bandwidth saturation.
+    NEW: Excludes 'seq' mode from this plot.
     """
     print("Generating Time vs. Threads plots...")
     
     matrices = df["Matrix"].unique()
     
     for matrix in matrices:
-        matrix_df = df[df["Matrix"] == matrix]
+        
+        # --- THIS IS THE FIX ---
+        # Filter out the 'seq' mode before plotting
+        matrix_df = df[(df["Matrix"] == matrix) & (df["Mode"] != "seq")].copy()
+        # --- END FIX ---
         
         g = sns.relplot(
             data=matrix_df,
@@ -82,15 +86,23 @@ def plot_time_vs_threads(df, plots_dir):
             col="ChunkSize",
             kind="line",
             marker="o",
-            col_wrap=3
+            height=5,
+            aspect=1.2
         )
         
-        # Use log scales for both axes
-        g.set(xscale='log', yscale='log', 
-              xticks=[1, 2, 4, 8, 16, 32, 64],
-              xticklabels=[1, 2, 4, 8, 16, 32, 64])
-        g.fig.suptitle(f"Execution Time vs. Threads for {matrix}", y=1.03)
-        g.set_axis_labels("Threads (log scale)", "Time (ms) (log scale)")
+        for ax in g.axes.flat:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            ax.set_xticks(THREADS_TO_PLOT)
+            ax.set_xticklabels([str(t) for t in THREADS_TO_PLOT])
+            ax.set_xlabel("Threads (log scale)")
+            ax.set_ylabel("Time (ms) (log scale)")
+            ax.grid(which='major', axis='both', linestyle='--', linewidth=0.5)
+            ax.grid(which='minor', axis='both', linestyle=':', linewidth=0.5)
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: f'{y:g}'))
+
+        g.fig.suptitle(f"Execution Time vs. Threads for {matrix}", y=1.05)
+        g.set_titles("ChunkSize = {col_name}")
         
         plot_filename = plots_dir / f"time_vs_threads_{matrix.split('.')[0]}.png"
         g.savefig(plot_filename)
@@ -99,7 +111,6 @@ def plot_time_vs_threads(df, plots_dir):
 def plot_chunk_analysis(df, plots_dir):
     """
     Plots Time (ms) vs. ChunkSize.
-    Useful for finding the optimal chunk size.
     """
     print("Generating Chunk Size Analysis plots...")
     
@@ -115,16 +126,26 @@ def plot_chunk_analysis(df, plots_dir):
             y="Time_ms",
             hue="Mode",
             style="Mode",
-            col="Threads",      # New plot for each thread count
+            col="Threads",
             kind="line",
             marker="o",
-            col_wrap=4
+            height=5,
+            aspect=1.2
         )
         
-        # Use log scales
-        g.set(xscale='log', yscale='log')
-        g.fig.suptitle(f"Chunk Size Analysis for {matrix}", y=1.03)
-        g.set_axis_labels("Chunk Size (log scale)", "Time (ms) (log scale)")
+        for ax in g.axes.flat:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            ax.set_xticks(CHUNK_SIZES_TO_PLOT)
+            ax.set_xticklabels([str(t) for t in CHUNK_SIZES_TO_PLOT])
+            ax.set_xlabel("Chunk Size (log scale)")
+            ax.set_ylabel("Time (ms) (log scale)")
+            ax.grid(which='major', axis='both', linestyle='--', linewidth=0.5)
+            ax.grid(which='minor', axis='both', linestyle=':', linewidth=0.5)
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: f'{y:g}'))
+
+        g.fig.suptitle(f"Chunk Size Analysis for {matrix}", y=1.05)
+        g.set_titles("Threads = {col_name}")
         
         plot_filename = plots_dir / f"chunk_analysis_{matrix.split('.')[0]}.png"
         g.savefig(plot_filename)
@@ -143,17 +164,11 @@ def main():
         print("Please run your benchmark script first to generate the results.")
         return
 
-    # --- Data Cleaning ---
-    # Convert ChunkSize to numeric, forcing errors (like "NA") into NaN
+    # --- Data Cleaning (Robust Version) ---
+    print("Cleaning data...")
     df["ChunkSize"] = pd.to_numeric(df["ChunkSize"], errors='coerce')
-
-    # Fill all NaN values (which includes the 'seq' rows) with 1
     df["ChunkSize"] = df["ChunkSize"].fillna(1)
-
-    # Now it is safe to convert to integer
     df["ChunkSize"] = df["ChunkSize"].astype(int)
-        
-    # Replace any 0.0 times with a very small number to avoid errors in log scales
     df["Time_ms"] = df["Time_ms"].replace(0, 1e-6)
     
     # --- Calculate Speedup ---
@@ -164,8 +179,8 @@ def main():
     plot_time_vs_threads(df, PLOTS_DIR)
     plot_chunk_analysis(df, PLOTS_DIR)
     
-    print("\nAll plots generated successfully")
-    print(f"Plots are saved in the '{PLOTS_DIR}' directory.")
+    print("\nAll plots generated successfully!")
+    print(f"Your plots are saved in the '{PLOTS_DIR}' directory.")
 
 if __name__ == "__main__":
     main()

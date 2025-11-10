@@ -55,11 +55,13 @@ int main(int argc, char *argv[]) {
     double times[num_runs];
     
     // Benchmarking loop
-    double total_sum = 0.0; // To prevent compiler optimization
+    //double total_sum = 0.0; // To prevent compiler optimization
     for(int i =0; i < num_runs; i++){
+        /*
         for(int j = 0; j < matrix.N; j++) {
             v[j] = (double)(rand() % 10);   // Re-randomize v to avoid compiler optimization
         }
+            */
 
         for(int j = 0; j < matrix.M; j++) {
             y[j] = 0.0;                     // Reset result vector y
@@ -93,9 +95,11 @@ int main(int argc, char *argv[]) {
         }
 
         // Prevent compiler optimization (otherwise the time measurement are equal to 0)
+        /*
         for (int j = 0; j < matrix.M; j++) {
             total_sum += y[j]; 
         }
+        */
     }
 
     /*
@@ -117,7 +121,7 @@ int main(int argc, char *argv[]) {
     printf("\n90th percentile time: %f ms\n", times[p90_index]);
 
     // Print to stderr to force the compiler to calculate total_sum.
-    fprintf(stderr, "Checksum: %f\n", total_sum);
+    //fprintf(stderr, "Checksum: %f\n", total_sum);
 
     // Free memory
     matrix_free(&matrix);
