@@ -1,3 +1,5 @@
+// gcc -fopenmp -Wall -O3 .\src\sparse_matrix_x_vector.c .\src\mmio.c .\src\matrix.c -o spmv
+// ./spmv matrix_file.mtx <mode> [num_runs] [chunk_size]
 #include <stdio.h>
 #include <stdlib.h>
 #include "mmio.h"
@@ -55,14 +57,7 @@ int main(int argc, char *argv[]) {
     double times[num_runs];
     
     // Benchmarking loop
-    //double total_sum = 0.0; // To prevent compiler optimization
     for(int i =0; i < num_runs; i++){
-        /*
-        for(int j = 0; j < matrix.N; j++) {
-            v[j] = (double)(rand() % 10);   // Re-randomize v to avoid compiler optimization
-        }
-            */
-
         for(int j = 0; j < matrix.M; j++) {
             y[j] = 0.0;                     // Reset result vector y
         }
@@ -93,13 +88,6 @@ int main(int argc, char *argv[]) {
             times[i] = (end - start) * 1000.0; // milliseconds
             printf("Run %d: %f milliseconds\n", i+1, times[i]);
         }
-
-        // Prevent compiler optimization (otherwise the time measurement are equal to 0)
-        /*
-        for (int j = 0; j < matrix.M; j++) {
-            total_sum += y[j]; 
-        }
-        */
     }
 
     /*
@@ -119,9 +107,6 @@ int main(int argc, char *argv[]) {
     int p90_index = (int)(0.9 * num_runs) - 1; // index for 90th percentile
 
     printf("\n90th percentile time: %f ms\n", times[p90_index]);
-
-    // Print to stderr to force the compiler to calculate total_sum.
-    //fprintf(stderr, "Checksum: %f\n", total_sum);
 
     // Free memory
     matrix_free(&matrix);

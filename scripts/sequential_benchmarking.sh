@@ -2,7 +2,8 @@
 
 EXECUTABLE="./spmv"
 MATRICES=(
-    "af23560.mtx"
+    "twotone.mtx"
+    #"af23560.mtx"
     #"fidapm11.mtx"
     #"cfd2.mtx"
     #"s3dkt3m2.mtx"
