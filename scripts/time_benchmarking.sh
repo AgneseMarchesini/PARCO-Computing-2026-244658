@@ -24,7 +24,7 @@ TEMP_FILE="temp_times.txt"
 
 
 # Compile the program
-gcc -Wall -g -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
+gcc -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
 
 # Clear results file
 echo "Matrix,Mode,ChunkSize,Threads,Time_ms" > $RESULTS_CSV

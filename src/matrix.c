@@ -11,17 +11,6 @@ typedef struct {
     double val;
 } Triplet;
 
-// Compare function
-static int compare_triplets(const void* a, const void* b) {
-    Triplet* ta = (Triplet*)a;
-    Triplet* tb = (Triplet*)b;
-    if (ta->row < tb->row) return -1;
-    if (ta->row > tb->row) return 1; 
-    if (ta->col < tb->col) return -1;
-    if (ta->col > tb->col) return 1;
-    return 0;
-}
-
 // Load a sparse matrix from a Matrix Market (.mtx) file into CSR format
 int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix) {
     FILE *f;
@@ -63,9 +52,6 @@ int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix) {
 
     fclose(f);
 
-    // Sort triplets by row and then by column
-    qsort(triplets, nz, sizeof(Triplet), compare_triplets);
-
     // Popolate matrix
     matrix->M = M;
     matrix->N = N;
@@ -75,21 +61,51 @@ int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix) {
     matrix->row_pnt = (int*) calloc((M + 1), sizeof(int)); //calloc to initialize to 0
     matrix->col_pnt = (int*) malloc(nz * sizeof(int));
     matrix->val_pnt = (double*) malloc(nz * sizeof(double));
+    if (matrix->row_pnt == NULL || matrix->col_pnt == NULL || matrix->val_pnt == NULL) {
+        printf("Error: malloc failed for CSR arrays\n");
+        free(triplets);
+        return 1;
+    }
 
-    // Fill CSR arrays
+    // Count the number of entries in each row
     for (i = 0; i < nz; i++) {
         matrix->row_pnt[triplets[i].row + 1]++;
-        matrix->col_pnt[i] = triplets[i].col;
-        matrix->val_pnt[i] = triplets[i].val;
     }
 
-    // Convert the row counts into cumulative sums
+    // Create the row pointers (prefix sum)
     for(i = 0; i < M; i++){
-        matrix->row_pnt[i+1] += matrix->row_pnt[i]; //current position = previous position + number of nz
+        matrix->row_pnt[i+1] += matrix->row_pnt[i];
+    }
+
+    // Distribute the data
+    int* row_pos = (int*) malloc((M + 1) * sizeof(int));
+    if (row_pos == NULL) {
+        printf("Error: malloc failed for row_pos\n");
+        free(triplets);
+        return 1;
+    }
+    memcpy(row_pos, matrix->row_pnt, (M + 1) * sizeof(int));
+
+    // Loop through the unsorted triplets one more time
+    for (i = 0; i < nz; i++) {
+        int row = triplets[i].row;
+        int col = triplets[i].col;
+        double val = triplets[i].val;
+
+        // Find the next available slot for this triplet's row
+        int dest_idx = row_pos[row];
+
+        // Place the data in that slot
+        matrix->col_pnt[dest_idx] = col;
+        matrix->val_pnt[dest_idx] = val;
+
+        // Increment the slot-tracker for that row
+        row_pos[row]++;
     }
     
-    // Free temporary triplet array
+    // Free array
     free(triplets);
+    free(row_pos);
 
     printf("Matrix loaded: %d x %d with %d non-zeros\n", M, N, nz);
 
