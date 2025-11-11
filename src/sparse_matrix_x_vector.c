@@ -1,5 +1,5 @@
 // gcc -fopenmp -Wall -O3 .\src\sparse_matrix_x_vector.c .\src\mmio.c .\src\matrix.c -o spmv
-// ./spmv matrix_file.mtx <mode> [num_runs] [chunk_size]
+// ./spmv matrix_file.mtx <mode> [chunk_size]
 #include <stdio.h>
 #include <stdlib.h>
 #include "mmio.h"
@@ -10,17 +10,20 @@
 #include "timer.h"
 
 int main(int argc, char *argv[]) {
+    int i;
     
-    if (argc != 4) {
-        printf("Usage: %s matrix_file.mtx <mode> [num_runs]\n", argv[0]);
+    if (argc != 5) {
+        printf("Usage: %s matrix_file.mtx <mode> [chunk_size] [threads]\n", argv[0]);
         printf("<mode>: seq, static, dynamic, guided\n");
-        printf("Chunk size for OpenMP scheduling, default: 10\n");
+        printf("Chunk size for OpenMP scheduling\n");
+        printf("Number of threads\n");
         return 1;
     }
 
     char* matrix_file = argv[1];
     char* mode = argv[2];
     int chunk_size = atoi(argv[3]);
+    int threads = atoi(argv[4]);
 
     SparseMatrixCSR matrix;
 
@@ -40,7 +43,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize vector v with some random values
     srand((unsigned int)time(NULL));
-    for(int i = 0; i < matrix.N; i++) {
+    for(i = 0; i < matrix.N; i++) {
         v[i] = (double)(rand() % 10);
     }
 
@@ -51,6 +54,7 @@ int main(int argc, char *argv[]) {
     if (strcmp(mode, "seq") == 0){
         matrix_vector_mul_sequential(&matrix, v, y);
     } else {
+        omp_set_num_threads(threads);
         if(strcmp(mode, "static") == 0){
             omp_set_schedule(omp_sched_static, chunk_size);
         } else if(strcmp(mode, "dynamic") == 0){
@@ -64,8 +68,8 @@ int main(int argc, char *argv[]) {
         matrix_vector_mul_parallel(&matrix, v, y);
     }
 
-    for(int j = 0; j < matrix.M; j++) {
-        y[j] = 0.0;                     // Reset result vector y
+    for(i = 0; i < matrix.M; i++) {
+        y[i] = 0.0;                     // Reset result vector y
     }
 
     // Timed run

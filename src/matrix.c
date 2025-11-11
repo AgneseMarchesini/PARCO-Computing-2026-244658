@@ -84,7 +84,7 @@ int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix) {
     }
 
     // Convert the row counts into cumulative sums
-    for(int i = 0; i < M; i++){
+    for(i = 0; i < M; i++){
         matrix->row_pnt[i+1] += matrix->row_pnt[i]; //current position = previous position + number of nz
     }
     
@@ -103,23 +103,25 @@ void matrix_free(SparseMatrixCSR* matrix) {
 }
 
 void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v, double* y) {
-    for (int i = 0; i < matrix->M; i++) {
+    int i, j;
+    for (i = 0; i < matrix->M; i++) {
         int start_index = matrix->row_pnt[i];
         int end_index = matrix->row_pnt[i + 1];
 
-        for (int j = start_index; j < end_index; j++) {
+        for (j = start_index; j < end_index; j++) {
             y[i] += matrix->val_pnt[j] * v[matrix->col_pnt[j]];
         }
     }
 }
 
 void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, double* y){
-    #pragma omp parallel for default(none) shared(matrix, v, y) 
-    for (int i = 0; i < matrix->M; i++) {
+    int i, j;
+    #pragma omp parallel for default(none) shared(matrix, v, y) private(i, j)
+    for (i = 0; i < matrix->M; i++) {
         int start_index = matrix->row_pnt[i];
         int end_index = matrix->row_pnt[i + 1];
 
-        for (int j = start_index; j < end_index; j++) {
+        for (j = start_index; j < end_index; j++) {
             y[i] += matrix->val_pnt[j] * v[matrix->col_pnt[j]];
         }
     }

@@ -15,8 +15,8 @@ MODES=(
     "dynamic"
     "guided"
 )
-CHUNK_SIZE=(1 10 100) # 1000 10000
-THREADS=(1 2 4) #8 16 32 64
+CHUNK_SIZE=(1 10 100 1000 10000)
+THREADS=(1 2 4 8 16 32 64)
 NUM_RUNS=10
 RESULTS_DIR="results"
 RESULTS_CSV="$RESULTS_DIR/benchmark_results.csv"
@@ -34,14 +34,14 @@ do
     MATRIX_FILE="$DATA_DIR/$MATRIX_NAME"
 
     # Sequential version
-    export OMP_NUM_THREADS=1
     echo "Running: $MATRIX_NAME, seq, NA, 1 thread" # matrix_name, mode, chunk_size, threads
     
     > $TEMP_FILE # Clear temp file
     # Run sequential multiple times 
     for (( r=1; r<=$NUM_RUNS; r++ ))
     do
-        $EXECUTABLE $MATRIX_FILE seq 1 | grep "TIME:" | awk '{print $2}' >> $TEMP_FILE
+        # spmv matrix_file mode chunk_size threads
+        $EXECUTABLE $MATRIX_FILE seq 1 1 | grep "Time:" | awk '{print $2}' >> $TEMP_FILE
     done
 
     # Calculate 90th percentile for sequential runs
@@ -50,7 +50,7 @@ do
     # tail -n 1 gets the 9th run (90th percentile)
     TIME_MS=$(sort -n $TEMP_FILE | head -n 9 | tail -n 1)
     
-    echo "$MATRIX_NAME,seq,NA,1,$TIMES_MS" >> $RESULTS_CSV
+    echo "$MATRIX_NAME,seq,NA,1,$TIME_MS" >> $RESULTS_CSV
 
     # Loop over modes
     for MODE in "${MODES[@]}"
@@ -61,20 +61,18 @@ do
             # Loop over threads
             for T in "${THREADS[@]}"
             do 
-                export OMP_NUM_THREADS=$T
-
                 echo "Running: $MATRIX_NAME, $MODE, $CHUNK, $T threads"
 
                 # Run the parallel version multiple times like before
                 > $TEMP_FILE # Clear temp file
                 for (( r=1; r<=$NUM_RUNS; r++ ))
                 do
-                    $EXECUTABLE $MATRIX_FILE $MODE $CHUNK | grep "TIME:" | awk '{print $2}' >> $TEMP_FILE
+                    $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T | grep "Time:" | awk '{print $2}' >> $TEMP_FILE
                 done
 
                 TIME_MS=$(sort -n $TEMP_FILE | head -n 9 | tail -n 1)
 
-                echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$TIMES_MS" >> $RESULTS_CSV
+                echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$TIME_MS" >> $RESULTS_CSV
             done
         done
     done
