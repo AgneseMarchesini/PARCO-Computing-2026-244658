@@ -15,6 +15,9 @@
 # Set the other things
 #PBS -l select=1:ncpus=64:mem=8gb
 
+# Exit if any command fails
+set -e
+
 # Load module
 module load gcc91
 
@@ -48,6 +51,9 @@ TEMP_FILE="temp_times.txt"
 
 # Compile the program
 gcc -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
+
+# Create results directory if it doesn't exist
+mkdir -p $RESULTS_DIR
 
 # Clear results file
 echo "Matrix,Mode,ChunkSize,Threads,Time_ms" > $RESULTS_CSV
