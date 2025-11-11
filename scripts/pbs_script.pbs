@@ -3,8 +3,8 @@
 #PBS -N times_benchmark
 
 # Output and error file
-#PBS -o $PBS_O_WORKDIR/times_benchmark.out
-#PBS -e $PBS_O_WORKDIR/times_benchmark.err
+#PBS -o results/times_benchmark.out
+#PBS -e results/times_benchmark.err
 
 # Queue name
 #PBS -q short_cpuQ
@@ -15,14 +15,11 @@
 # Set the other things
 #PBS -l select=1:ncpus=64:mem=8gb
 
-# Exit if any command fails
-set -e
-
 # Load module
-module load gcc91
+module load gcc91 || { echo "module load failed"; exit 1; }
 
 # Select the working directory
-cd "$PBS_O_WORKDIR" # go to the dir where the qsub was run
+cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; }
 
 # Compile and run
 
