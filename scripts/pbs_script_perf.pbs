@@ -1,0 +1,109 @@
+#!/bin/bash
+# Job name
+#PBS -N perf_benchmark
+
+# Output and error file
+#PBS -o results/perf_benchmark.out
+#PBS -e results/perf_benchmark.err
+
+# Queue name
+#PBS -q short_cpuQ
+
+# Set the max wall time
+#PBS -l walltime=00:10:00
+
+# Set the other things
+#PBS -l select=1:ncpus=64:mem=8gb
+
+module load gcc91 || { echo "module load failed"; exit 1; }
+
+cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; } # go to the dir where the qsub was run
+
+EXECUTABLE="./spmv"
+MATRICES=(
+    "af23560.mtx"
+    #"twotone.mtx"
+    #"tmt_unsym.mtx"
+    #"atmosmodl.mtx"
+    #"Freescale1.mtx"
+)
+DATA_DIR="data"
+MODES=(
+    "static"
+    "dynamic"
+    "guided"
+)
+CHUNK_SIZE=(1 10 100 1000 10000)
+THREADS=(1 2 4 8 16 32 64)
+RESULTS_DIR="results"
+PERF_CSV="$RESULTS_DIR/perf_results.csv"
+TEMP_FILE="temp_perf.txt"
+
+# Events to measure
+PERF_EVENTS="cache-misses,cache-references,LLC-load-misses,instructions,cycles"
+
+echo "Compiling..."
+gcc-9.1.0 -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
+echo "Compilation finished."
+
+# Setup
+mkdir -p $RESULTS_DIR
+
+echo "Matrix,Mode,ChunkSize,Threads,Time_s,Cycles,Instructions,CacheMisses,CacheRefs,LLCMisses" > $PERF_CSV
+
+parse_perf_val() {
+    # $1 = file to read, $2 = string to grep
+    grep "$2" "$1" | awk '{print $1}' | sed 's/,//g' #remove commas
+} 
+
+for MATRIX_NAME in "${MATRICES[@]}"
+do
+    MATRIX_FILE="$DATA_DIR/$MATRIX_NAME"
+
+    # Sequential version 
+    echo "Running PERF: $MATRIX_NAME, seq, NA, 1 thread"
+
+    # Run perf stat, redirecting stderr (2) to stdout (1) and appending (>>)
+    perf stat -e $PERF_EVENTS -- \
+        $EXECUTABLE $MATRIX_FILE seq 1 1 \
+        > /dev/null 2>> $TEMP_FILE
+
+    TIME_S=$(parse_perf_val $TEMP_PERF_FILE "seconds time elapsed")
+    CYCLES=$(parse_perf_val $TEMP_PERF_FILE "cycles")
+    INSTRUCTIONS=$(parse_perf_val $TEMP_PERF_FILE "instructions")
+    CACHE_MISSES=$(parse_perf_val $TEMP_PERF_FILE "cache-misses")
+    CACHE_REFS=$(parse_perf_val $TEMP_PERF_FILE "cache-references")
+    LLC_MISSES=$(parse_perf_val $TEMP_PERF_FILE "LLC-load-misses")
+
+    echo "$MATRIX_NAME,seq,NA,1,$TIME_S,$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES" >> $PERF_CSV
+
+
+    # Parallel versions
+    for MODE in "${MODES[@]}"
+    do
+        for CHUNK in "${CHUNK_SIZE[@]}"
+        do
+            for T in "${THREADS[@]}"
+            do 
+                echo "Running PERF: $MATRIX_NAME, $MODE, $CHUNK, $T threads"
+                
+                perf stat -e $PERF_EVENTS -- \
+                    $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T \
+                    > /dev/null 2> $TEMP_PERF_FILE
+                
+                TIME_S=$(parse_perf_val $TEMP_PERF_FILE "seconds time elapsed")
+                CYCLES=$(parse_perf_val $TEMP_PERF_FILE "cycles")
+                INSTRUCTIONS=$(parse_perf_val $TEMP_PERF_FILE "instructions")
+                CACHE_MISSES=$(parse_perf_val $TEMP_PERF_FILE "cache-misses")
+                CACHE_REFS=$(parse_perf_val $TEMP_PERF_FILE "cache-references")
+                LLC_MISSES=$(parse_perf_val $TEMP_PERF_FILE "LLC-load-misses")
+
+                echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$TIME_S,$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES" >> $PERF_CSV
+            done
+        done
+    done
+done
+
+rm $TEMP_FILE
+
+echo "Performance data saved in $PERF_CSV"

@@ -25,8 +25,8 @@ cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; }
 
 EXECUTABLE="./spmv"
 MATRICES=(
-    "af23560.mtx"
-    #"twotone.mtx"
+    #"af23560.mtx"
+    "twotone.mtx"
     #"tmt_unsym.mtx"
     #"atmosmodl.mtx"
     #"Freescale1.mtx"
@@ -47,7 +47,7 @@ TEMP_FILE="temp_times.txt"
 
 
 # Compile the program
-gcc -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
+gcc-9.1.0 -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
 
 # Create results directory if it doesn't exist
 mkdir -p $RESULTS_DIR
