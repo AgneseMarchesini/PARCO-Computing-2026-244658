@@ -3,6 +3,7 @@
 #include <time.h>
 #include "mmio.h"
 #include "matrix.h"
+#include <string.h>
 
 // Temporary container for (row, column, value) triplet
 typedef struct {
