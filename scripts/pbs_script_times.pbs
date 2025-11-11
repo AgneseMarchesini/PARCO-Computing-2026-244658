@@ -10,10 +10,10 @@
 #PBS -q short_cpuQ
 
 # Set the max wall time
-#PBS -l walltime=00:10:00
+#PBS -l walltime=06:00:00
 
 # Set the other things
-#PBS -l select=1:ncpus=64:mem=8gb
+#PBS -l select=1:ncpus=64:mem=32gb
 
 # Load module
 module load gcc91 || { echo "module load failed"; exit 1; }
