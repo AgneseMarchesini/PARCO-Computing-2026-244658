@@ -16,6 +16,7 @@
 #PBS -l select=1:ncpus=64:mem=8gb
 
 module load gcc91 || { echo "module load failed"; exit 1; }
+module load perf || { echo "module load failed"; exit 1; }
 
 cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; } # go to the dir where the qsub was run
 
