@@ -42,9 +42,7 @@ TEMP_FILE="temp_perf.txt"
 # Events to measure
 PERF_EVENTS="cache-misses,cache-references,LLC-load-misses,instructions,cycles"
 
-echo "Compiling..."
 gcc-9.1.0 -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
-echo "Compilation finished."
 
 # Setup
 mkdir -p $RESULTS_DIR
@@ -68,11 +66,11 @@ do
         $EXECUTABLE $MATRIX_FILE seq 1 1 \
         > /dev/null 2> $TEMP_FILE
 
-    CYCLES=$(parse_perf_val $TEMP_PERF_FILE "cycles")
-    INSTRUCTIONS=$(parse_perf_val $TEMP_PERF_FILE "instructions")
-    CACHE_MISSES=$(parse_perf_val $TEMP_PERF_FILE "cache-misses")
-    CACHE_REFS=$(parse_perf_val $TEMP_PERF_FILE "cache-references")
-    LLC_MISSES=$(parse_perf_val $TEMP_PERF_FILE "LLC-load-misses")
+    CYCLES=$(parse_perf_val $TEMP_FILE "cycles")
+    INSTRUCTIONS=$(parse_perf_val $TEMP_FILE "instructions")
+    CACHE_MISSES=$(parse_perf_val $TEMP_FILE "cache-misses")
+    CACHE_REFS=$(parse_perf_val $TEMP_FILE "cache-references")
+    LLC_MISSES=$(parse_perf_val $TEMP_FILE "LLC-load-misses")
 
     echo "$MATRIX_NAME,seq,NA,1,$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES" >> $PERF_CSV
 
@@ -88,13 +86,13 @@ do
                 
                 perf stat -e $PERF_EVENTS -- \
                     $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T \
-                    > /dev/null 2> $TEMP_PERF_FILE
+                    > /dev/null 2> $TEMP_FILE
 
-                CYCLES=$(parse_perf_val $TEMP_PERF_FILE "cycles")
-                INSTRUCTIONS=$(parse_perf_val $TEMP_PERF_FILE "instructions")
-                CACHE_MISSES=$(parse_perf_val $TEMP_PERF_FILE "cache-misses")
-                CACHE_REFS=$(parse_perf_val $TEMP_PERF_FILE "cache-references")
-                LLC_MISSES=$(parse_perf_val $TEMP_PERF_FILE "LLC-load-misses")
+                CYCLES=$(parse_perf_val $TEMP_FILE "cycles")
+                INSTRUCTIONS=$(parse_perf_val $TEMP_FILE "instructions")
+                CACHE_MISSES=$(parse_perf_val $TEMP_FILE "cache-misses")
+                CACHE_REFS=$(parse_perf_val $TEMP_FILE "cache-references")
+                LLC_MISSES=$(parse_perf_val $TEMP_FILE "LLC-load-misses")
 
                 echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES" >> $PERF_CSV
             done
