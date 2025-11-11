@@ -1,5 +1,5 @@
 // gcc -fopenmp -Wall -O3 .\src\sparse_matrix_x_vector.c .\src\mmio.c .\src\matrix.c -o spmv
-// ./spmv matrix_file.mtx <mode> [chunk_size]
+// ./spmv matrix_file.mtx <mode> [chunk_size] [threads]
 #include <stdio.h>
 #include <stdlib.h>
 #include "mmio.h"

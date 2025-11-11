@@ -1,0 +1,26 @@
+#!/bin/bash
+# Job name
+#PBS -N times_benchmark
+
+# Output and error file
+#PBS -o $PBS_O_WORKDIR/times_benchmark.out
+#PBS -e $PBS_O_WORKDIR/times_benchmark.err
+
+# Queue name
+#PBS -q short_cpuQ
+
+# Set the max wall time
+#PBS -l walltime=00:10:00
+
+# Set the other things
+#PBS -l select=1:ncpus=64:mem=8gb
+
+# Load module
+module load gcc91
+
+# Select the working directory
+cd "$PBS_O_WORKDIR" # go to the dir where the qsub was run
+
+# Compile and run
+
+bash ./scripts/time_benchmarking.sh
