@@ -23,4 +23,4 @@ cd "$PBS_O_WORKDIR" # go to the dir where the qsub was run
 
 # Compile and run
 
-bash ./scripts/time_benchmarking.sh
+./scripts/time_benchmarking.sh
