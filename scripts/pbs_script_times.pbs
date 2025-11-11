@@ -25,11 +25,11 @@ cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; }
 
 EXECUTABLE="./spmv"
 MATRICES=(
-    #"af23560.mtx"
+    "af23560.mtx"
     "twotone.mtx"
-    #"tmt_unsym.mtx"
-    #"atmosmodl.mtx"
-    #"Freescale1.mtx"
+    "tmt_unsym.mtx"
+    "atmosmodl.mtx"
+    "Freescale1.mtx"
 )
 DATA_DIR="data"
 MODES=(
