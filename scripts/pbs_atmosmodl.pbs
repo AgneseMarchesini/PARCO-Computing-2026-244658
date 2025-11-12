@@ -38,7 +38,7 @@ CHUNK_SIZE=(1 10 100 1000 10000)
 THREADS=(1 2 4 8 16 32 64)
 RESULTS_DIR="results"
 PERF_CSV="$RESULTS_DIR/perf_results_atmosmodl.csv"
-TEMP_FILE="temp_perf.txt"
+TEMP_FILE="temp_perf_atmosmodl.txt"
 NUM_RUNS=5
 
 # Events to measure
