@@ -15,16 +15,14 @@ MODES=(
     "dynamic"
     "guided"
 )
-CHUNK_SIZE=(1 10 100 1000 10000)
+CHUNK_SIZE=(1 10 100 1000)
 THREADS=(1 2 4 8 16 32 64)
 NUM_RUNS=10
 RESULTS_DIR="results"
-RESULTS_CSV="$RESULTS_DIR/benchmark_results.csv"
-TEMP_FILE="temp_times.txt"
-
+RESULTS_CSV="$RESULTS_DIR/time_results.csv"
 
 # Compile the program
-gcc -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
+gcc -Wall -O3 -fopenmp src/main.c src/matrix.c src/mmio.c -o spmv -lm
 
 # Clear results file
 echo "Matrix,Mode,ChunkSize,Threads,Time_ms" > $RESULTS_CSV
@@ -36,20 +34,9 @@ do
     # Sequential version
     echo "Running: $MATRIX_NAME, seq, NA, 1 thread" # matrix_name, mode, chunk_size, threads
     
-    > $TEMP_FILE # Clear temp file
-    # Run sequential multiple times 
-    for (( r=1; r<=$NUM_RUNS; r++ ))
-    do
-        # spmv matrix_file mode chunk_size threads
-        $EXECUTABLE $MATRIX_FILE seq 1 1 | grep "Time:" | awk '{print $2}' >> $TEMP_FILE
-    done
-
-    # Calculate 90th percentile for sequential runs
-    # sort -n sorts
-    # head -n 9 gets first 9 lines
-    # tail -n 1 gets the 9th run (90th percentile)
-    TIME_MS=$(sort -n $TEMP_FILE | head -n 9 | tail -n 1)
-    
+    # spmv matrix_file mode chunk_size threads
+    TIME_MS=$($EXECUTABLE $MATRIX_FILE seq 1 1 $NUM_RUNS | grep "Time:" | awk '{print $2}')
+   
     echo "$MATRIX_NAME,seq,NA,1,$TIME_MS" >> $RESULTS_CSV
 
     # Loop over modes
@@ -63,21 +50,12 @@ do
             do 
                 echo "Running: $MATRIX_NAME, $MODE, $CHUNK, $T threads"
 
-                # Run the parallel version multiple times like before
-                > $TEMP_FILE # Clear temp file
-                for (( r=1; r<=$NUM_RUNS; r++ ))
-                do
-                    $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T | grep "Time:" | awk '{print $2}' >> $TEMP_FILE
-                done
-
-                TIME_MS=$(sort -n $TEMP_FILE | head -n 9 | tail -n 1)
+                TIME_MS=$($EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T $NUM_RUNS | grep "Time:" | awk '{print $2}')
 
                 echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$TIME_MS" >> $RESULTS_CSV
             done
         done
     done
 done
-
-rm $TEMP_FILE
 
 echo "Data saved in $RESULTS_CSV"

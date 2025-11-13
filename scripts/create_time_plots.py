@@ -7,7 +7,7 @@ import matplotlib.ticker as ticker
 # --- Configuration ---
 RESULTS_DIR = Path("results")
 PLOTS_DIR = Path("plots")
-RESULTS_CSV = RESULTS_DIR / "benchmark_results.csv"
+RESULTS_CSV = RESULTS_DIR / "time_results.csv"
 CHUNK_SIZES_TO_PLOT = [1, 10, 100, 1000, 10000] 
 THREADS_TO_PLOT = [1, 2, 4, 8, 16, 32, 64]
 # --- End Configuration ---

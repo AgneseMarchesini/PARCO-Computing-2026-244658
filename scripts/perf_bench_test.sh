@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXECUTABLE="./spmv"
+EXECUTABLE="./spmv.exe"
 MATRICES=(
     "af23560.mtx"
     #"twotone.mtx"
@@ -14,28 +14,21 @@ MODES=(
     "dynamic"
     "guided"
 )
-CHUNK_SIZE=(1 10 100 1000 10000)
+CHUNK_SIZE=(1 10 100 1000)
 THREADS=(1 2 4 8 16 32 64)
+NUM_RUNS=1 
 RESULTS_DIR="results"
 PERF_CSV="$RESULTS_DIR/perf_results.csv"
-TEMP_FILE="temp_perf.txt"
-NUM_RUNS=5
 
 # Events to measure
 PERF_EVENTS="cache-misses,cache-references,LLC-load-misses,instructions,cycles"
 
-gcc -Wall -O3 -fopenmp src/sparse_matrix_x_vector.c src/matrix.c src/mmio.c -o spmv
+gcc -Wall -O3 -fopenmp src/main.c src/matrix.c src/mmio.c -o spmv -lm
 
 # Setup
 mkdir -p $RESULTS_DIR
 
 echo "Matrix,Mode,ChunkSize,Threads,Cycles,Instructions,CacheMisses,CacheRefs,LLCMisses" > $PERF_CSV
-
-parse_perf_avg() {
-    # $1 = file to read, $2 = string to grep
-    grep "$2" "$1" | awk '{print $1}' | sed 's/,//g' | awk '{ total += $1 } END { print total/NR }'
-    # remove commas and calculate average
-} 
 
 for MATRIX_NAME in "${MATRICES[@]}"
 do
@@ -44,20 +37,16 @@ do
     # Sequential version 
     echo "Running PERF: $MATRIX_NAME, seq, NA, 1 thread"
 
-    > $TEMP_FILE # > clear temp file
-    for ((i=0; i<$NUM_RUNS; i++))
-    do
-        # Run perf stat, redirecting stderr (2) to stdout (1) and appending (>>)
-        perf stat -e $PERF_EVENTS -- \
-            $EXECUTABLE $MATRIX_FILE seq 1 1 \
-            > /dev/null 2>> $TEMP_FILE # >> append
-    done
+    PERF_OUTPUT=$(perf stat -e $PERF_EVENTS -- \
+        $EXECUTABLE $MATRIX_FILE seq 1 1 $NUM_RUNS \
+        2>&1 >/dev/null)
 
-    CYCLES=$(parse_perf_avg $TEMP_FILE "cycles")
-    INSTRUCTIONS=$(parse_perf_avg $TEMP_FILE "instructions")
-    CACHE_MISSES=$(parse_perf_avg $TEMP_FILE "cache-misses")
-    CACHE_REFS=$(parse_perf_avg $TEMP_FILE "cache-references")
-    LLC_MISSES=$(parse_perf_avg $TEMP_FILE "LLC-load-misses")
+
+    CYCLES=$(echo "$PERF_OUTPUT" | grep "cycles" | awk '{print $1}' | sed 's/,//g')
+    INSTRUCTIONS=$(echo "$PERF_OUTPUT" | grep "instructions" | awk '{print $1}' | sed 's/,//g')
+    CACHE_MISSES=$(echo "$PERF_OUTPUT" | grep "cache-misses" | awk '{print $1}' | sed 's/,//g')
+    CACHE_REFS=$(echo "$PERF_OUTPUT" | grep "cache-references" | awk '{print $1}' | sed 's/,//g')
+    LLC_MISSES=$(echo "$PERF_OUTPUT" | grep "LLC-load-misses" | awk '{print $1}' | sed 's/,//g')
 
     echo "$MATRIX_NAME,seq,NA,1,$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES" >> $PERF_CSV
 
@@ -70,25 +59,21 @@ do
             for T in "${THREADS[@]}"
             do 
                 echo "Running PERF: $MATRIX_NAME, $MODE, $CHUNK, $T threads"
-                > $TEMP_FILE
-                for ((i=0; i<$NUM_RUNS; i++))
-                do
-                    perf stat -e $PERF_EVENTS -- \
-                        $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T \
-                        > /dev/null 2>> $TEMP_FILE
-                done
-                CYCLES=$(parse_perf_avg $TEMP_FILE "cycles")
-                INSTRUCTIONS=$(parse_perf_avg $TEMP_FILE "instructions")
-                CACHE_MISSES=$(parse_perf_avg $TEMP_FILE "cache-misses")
-                CACHE_REFS=$(parse_perf_avg $TEMP_FILE "cache-references")
-                LLC_MISSES=$(parse_perf_avg $TEMP_FILE "LLC-load-misses")
+                
+                PERF_OUTPUT=$(perf stat -e $PERF_EVENTS -- \
+                    $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T $NUM_RUNS \
+                    2>&1 >/dev/null)
+                
+                CYCLES=$(echo "$PERF_OUTPUT" | grep "cycles" | awk '{print $1}' | sed 's/,//g')
+                INSTRUCTIONS=$(echo "$PERF_OUTPUT" | grep "instructions" | awk '{print $1}' | sed 's/,//g')
+                CACHE_MISSES=$(echo "$PERF_OUTPUT" | grep "cache-misses" | awk '{print $1}' | sed 's/,//g')
+                CACHE_REFS=$(echo "$PERF_OUTPUT" | grep "cache-references" | awk '{print $1}' | sed 's/,//g')
+                LLC_MISSES=$(echo "$PERF_OUTPUT" | grep "LLC-load-misses" | awk '{print $1}' | sed 's/,//g')
 
                 echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES" >> $PERF_CSV
             done
         done
     done
 done
-
-rm $TEMP_FILE
 
 echo "Performance data saved in $PERF_CSV"

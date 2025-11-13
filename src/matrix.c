@@ -47,7 +47,7 @@ int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix) {
     // Read triplets
     for (i = 0; i < nz; i++) {
         fscanf(f, "%d %d %lf", &triplets[i].row, &triplets[i].col, &triplets[i].val);
-        triplets[i].row--;  // convert to 0-based indexing (C uses 0-based)
+        triplets[i].row--;  // convert to 0-based indexing 
         triplets[i].col--;
     }
 
@@ -133,7 +133,7 @@ void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v
 
 void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, double* y){
     int i, j;
-    #pragma omp parallel for default(none) shared(matrix, v, y) private(i, j)
+    #pragma omp parallel for default(none) shared(matrix, v, y) private(i, j) schedule(runtime)
     for (i = 0; i < matrix->M; i++) {
         int start_index = matrix->row_pnt[i];
         int end_index = matrix->row_pnt[i + 1];
