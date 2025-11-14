@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXECUTABLE="./spmv.exe"
+EXECUTABLE="./spmv"
 MATRICES=(
     "af23560.mtx"
     #"twotone.mtx"
