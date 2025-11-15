@@ -55,11 +55,24 @@ perf_avg() {
     local PERF_OUTPUT
     PERF_OUTPUT=$(perf stat -r $PERF_RUNS -e $PERF_EVENTS -- "$@" 2>&1 >/dev/null)   # -r = repeat
 
+    if [ $? -ne 0 ]; then
+        echo "perf stat failed (or program crashed) for command: $*" >&2
+        # Return "ERROR" for all fields
+        echo "ERROR,ERROR,ERROR,ERROR,ERROR"
+        return
+    fi
+
     local CYCLES=$(echo "$PERF_OUTPUT" | grep "cycles" | awk '{print $1}' | sed 's/,//g')
     local INSTRUCTIONS=$(echo "$PERF_OUTPUT" | grep "instructions" | awk '{print $1}' | sed 's/,//g')
     local CACHE_MISSES=$(echo "$PERF_OUTPUT" | grep "cache-misses" | awk '{print $1}' | sed 's/,//g')
     local CACHE_REFS=$(echo "$PERF_OUTPUT" | grep "cache-references" | awk '{print $1}' | sed 's/,//g')
     local LLC_MISSES=$(echo "$PERF_OUTPUT" | grep "LLC-load-misses" | awk '{print $1}' | sed 's/,//g')
+
+    CYCLES=${CYCLES:-0}
+    INSTRUCTIONS=${INSTRUCTIONS:-0}
+    CACHE_MISSES=${CACHE_MISSES:-0}
+    CACHE_REFS=${CACHE_REFS:-0}
+    LLC_MISSES=${LLC_MISSES:-0}
 
     echo "$CYCLES,$INSTRUCTIONS,$CACHE_MISSES,$CACHE_REFS,$LLC_MISSES"
 }
