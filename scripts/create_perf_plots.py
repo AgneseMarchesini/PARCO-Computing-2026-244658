@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter, ScalarFormatter
 import os
 
-def plot_perf_data(csv_files, output_dir, output_prefix='plot'):
+def plot_perf_data(csv_file_path, output_dir, output_prefix='plot'):
     """
-    Loads performance CSV files, calculates cache miss ratios,
+    Loads a single performance CSV file, calculates cache miss ratios,
     and generates separate PNG plots for each matrix, including a
     sequential baseline on each plot.
 
     Args:
-        csv_files (list): A list of full file paths to the CSV files.
+        csv_file_path (str): The full file path to the CSV file.
         output_dir (str): The directory where plots will be saved.
         output_prefix (str): A prefix for the saved plot filenames.
     """
@@ -19,12 +19,11 @@ def plot_perf_data(csv_files, output_dir, output_prefix='plot'):
     # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Load and concatenate datasets
+    # Load the dataset
     try:
-        df_list = [pd.read_csv(file) for file in csv_files]
-        df = pd.concat(df_list, ignore_index=True)
-    except FileNotFoundError as e:
-        print(f"Error loading file: {e}. Please ensure files are in the 'results' folder.")
+        df = pd.read_csv(csv_file_path)
+    except FileNotFoundError:
+        print(f"Error: File not found at {csv_file_path}")
         return
     except Exception as e:
         print(f"An error occurred during file loading: {e}")
@@ -175,25 +174,42 @@ def plot_perf_data(csv_files, output_dir, output_prefix='plot'):
 
 
 if __name__ == "__main__":
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    
-    project_root = os.path.dirname(script_dir)
-    
-    results_dir = os.path.join(project_root, 'results')
-    plots_dir = os.path.join(project_root, 'plots')
-    
+    # Assume the script is in a 'scripts' or 'src' folder
+    # and 'results' and 'plots' are in the parent directory.
     try:
-        csv_names = [f for f in os.listdir(results_dir) if f.startswith('perf_results') and f.endswith('.csv')]
-        if not csv_names:
-            print(f"No CSV files starting with 'perf_results' found in {results_dir}")
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        project_root = os.path.dirname(script_dir)
+        
+        results_dir = os.path.join(project_root, 'results')
+        plots_dir = os.path.join(project_root, 'plots')
+
+        # Define the single, known CSV file name
+        csv_name = 'perf_results.csv'
+        file_to_plot = os.path.join(results_dir, csv_name)
+        
+        # Check if the file actually exists before trying to plot
+        if not os.path.exists(file_to_plot):
+            print(f"Error: The file '{csv_name}' was not found in {results_dir}")
             exit()
-            
-        print(f"Found files to process: {csv_names}")
-        files_to_plot = [os.path.join(results_dir, name) for name in csv_names]
+
+        print(f"Processing file: {file_to_plot}")
+        plot_perf_data(file_to_plot, plots_dir, output_prefix='perf_analysis')
         
-        plot_perf_data(files_to_plot, plots_dir, output_prefix='perf_analysis')
-        
+    except NameError:
+        # Fallback for interactive environments like notebooks
+        # where __file__ might not be defined.
+        print("Warning: __file__ not defined. Assuming relative paths '.'")
+        results_dir = 'results'
+        plots_dir = 'plots'
+        file_to_plot = os.path.join(results_dir, 'perf_results.csv')
+        if not os.path.exists(file_to_plot):
+            print(f"Error: The file 'perf_results.csv' was not found in {results_dir}")
+        else:
+             print(f"Processing file: {file_to_plot}")
+             plot_perf_data(file_to_plot, plots_dir, output_prefix='perf_analysis')
+   
     except FileNotFoundError:
+        # This will catch if the 'results' directory itself is missing
         print(f"Error: The 'results' directory was not found at {results_dir}")
     except Exception as e:
         print(f"An error occurred: {e}")
