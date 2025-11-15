@@ -48,6 +48,7 @@ gcc-9.1.0 -Wall -O3 -fopenmp src/main.c src/matrix.c src/mmio.c -o spmv -lm
 
 # Setup
 mkdir -p $RESULTS_DIR
+rm -f $PERF_CSV
 
 echo "Matrix,Mode,ChunkSize,Threads,Cycles,Instructions,CacheMisses,CacheRefs,LLCMisses" > $PERF_CSV
 
