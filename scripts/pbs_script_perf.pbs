@@ -97,7 +97,7 @@ do
             do 
                 echo "Running PERF (avg over $PERF_RUNS runs): $MATRIX_NAME, $MODE, $CHUNK, $T threads"
                 
-                PERF_STATS=$(run_and_parse_perf $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T $NUM_RUNS)
+                PERF_STATS=$(perf_avg $EXECUTABLE $MATRIX_FILE $MODE $CHUNK $T $NUM_RUNS)
                 echo "$MATRIX_NAME,$MODE,$CHUNK,$T,$PERF_STATS" >> $PERF_CSV
             done
         done
