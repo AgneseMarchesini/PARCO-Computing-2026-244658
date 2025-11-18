@@ -63,9 +63,8 @@ List the major frameworks, libraries, and tools used to bootstrap your project.
 ## Installation
 
 To reproduce the project locally you can clone the repo into your local system or in the unitn cluster with:
-    ```sh
 
-    ```
+    git clone https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
