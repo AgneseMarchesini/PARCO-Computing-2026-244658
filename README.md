@@ -36,10 +36,7 @@
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
@@ -47,9 +44,6 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-
-<!-- Add a screenshot of your UI here -->
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 Here is where you explain the **"Why"** of your project. 
 
@@ -65,11 +59,8 @@ Don't get too technical here; save that for the documentation. Keep it high-leve
 
 List the major frameworks, libraries, and tools used to bootstrap your project.
 
-* [![React][React.js]][React-url]
-* [![Vue][Vue.js]][Vue-url]
-* [![Angular][Angular.io]][Angular-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
-* [![JQuery][JQuery.com]][JQuery-url]
+* C
+* ...
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -133,18 +124,6 @@ See the [open issues](https://github.com/github_username/repo_name/issues) for a
 Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@example.com
 
 Project Link: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ACKNOWLEDGMENTS -->
-## 🙏 Acknowledgments
-
-Use this section to mention resources you used, inspiration, or packages that saved you time.
-
-* [Choose an Open Source License](https://choosealicense.com)
-* [GitHub Emoji Cheat Sheet](https://www.webpagefx.com/tools/emoji-cheat-sheet)
-* [Malven's Flexbox Cheatsheet](https://flexbox.malven.co/)
-* [Img Shields](https://shields.io)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
