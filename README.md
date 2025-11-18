@@ -59,12 +59,15 @@ List the major frameworks, libraries, and tools used to bootstrap your project.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- GETTING STARTED -->
 ## Installation
-
-To reproduce the project locally you can clone the repo into your local system or in the unitn cluster with:
-
+Here are the instruction to reproduce the project locally or in the Unitn cluster:
+1. Clone the repo:
+```sh
     git clone https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git
+```
+
+2. Download from the `data` directory the five matrices used 
+3. Replace the existing pointers in the cloned folder with the actual matrix files.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
