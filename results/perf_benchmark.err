@@ -1,0 +1,4 @@
+src/mmio.c: In function ‘mm_typecode_to_str’:
+src/mmio.c:460:9: warning: variable ‘error’ set but not used [-Wunused-but-set-variable]
+  460 |     int error =0;
+      |         ^~~~~
