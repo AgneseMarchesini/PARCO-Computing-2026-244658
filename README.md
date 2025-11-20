@@ -24,10 +24,10 @@
       <a href="#about-the-project">About The Project</a>
     </li>
     <li>
-      <a href="#structure">Project Structure</a></li>
+      <a href="#project-structure">Project Structure</a></li>
     </li>
     <li>
-      <a href="#installation">Reproducibility</a></li>
+      <a href="#reproducibility">Reproducibility</a></li>
     </li>
     <li><a href="#contact">Contact</a></li>
   </ol>
@@ -88,9 +88,20 @@ Here are the instruction to reproduce the project locally or in the Unitn cluste
 
 4. Now you have two options based on where you want to run the program:
 
-    a. If you want to run it locally you can run the shell scripts `/scripts/time_benchmark.sh` and `/scripts/perf_benchmark.sh`, making sure you have executed the permissions (`chmod +x /scripts/*.sh`);
+    a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions 
 
-    b. If you are in the cluster you can subtim the jobs with: `qsub /scripts/pbs_script_perf.pbs` and `qsub /scripts/pbs_scripts_time.pbs`;
+      ```sh
+          chmod +x /scripts/*.sh
+          /scripts/time_benchmark.sh 
+          /scripts/perf_benchmark.sh
+      ```
+
+    b. If you are in the cluster you can subtim the jobs with:
+
+      ```sh
+          qsub /scripts/pbs_script_perf.pbs
+          qsub /scripts/pbs_scripts_time.pbs
+      ```
 
 5. Results will be saved in the `/results` folder in csv format;
 
