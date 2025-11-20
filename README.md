@@ -9,7 +9,7 @@
   <a href="https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git">
   </a>
 
-  <h3 align="center">Sparse Matrix-Vector Multiplication Optimization</h3>
+  <h1 align="center">Sparse Matrix-Vector Multiplication Optimization</h1>
 
   <p align="center">
     Marchesini Agnese 244658
@@ -39,7 +39,9 @@
 ## About The Project
 
 Efficiently parallelizing Sparse Matrix-Vector (SpMV) multiplication is a significant challenge due to workload imbalance and irregular memory access patterns.
+
 In this project we use OpenMP to benchmark different combinations of threads, scheduling types and chunk sizes to analyze the speedups.
+
 This was done on five matrices with different dimensions and degrees of sparsity.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -47,21 +49,38 @@ This was done on five matrices with different dimensions and degrees of sparsity
 ## Project Structure
 .
 ├── data/                   # Matrix market files (.mtx) used for testing
+
 ├── plots/                  # Generated performance graphs
+
 ├── results/                # Benchmark CSV outputs
+
 ├── scripts/                # Helper scripts
+
 │   ├── pbs_script_*.pbs    # Job submissions
+
 │   ├── *_benchmark.sh      # Local execution script
+
 │   └── create_*.py         # Python script for visualization
+
 ├── src/                    # Source code
+
 │   ├── main.c              # Main code where SpMV is used
+
 │   ├── mmio.c              # Matrix Market I/O helper
+
 |   └── matrix.c            # SpMV implementation
+
 └── README.md
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Reproducibility
+
+Before running the project, ensure you have the following installed:
+
+* GCC Compiler with OpenMP support;
+
+* (Optional, only for plotting) Python.
 
 Here are the instruction to reproduce the project locally or in the Unitn cluster:
 
@@ -91,8 +110,11 @@ Here are the instruction to reproduce the project locally or in the Unitn cluste
 ## Contact
 
 Agnese Marchesini
+
 Student ID: 244658
+
 Email: agnese.marchesini-1@unitn.it
+
 Project Link: [https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git](https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
