@@ -47,30 +47,22 @@ This was done on five matrices with different dimensions and degrees of sparsity
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Project Structure
-.
-├── data/                   # Matrix market files (.mtx) used for testing
 
-├── plots/                  # Generated performance graphs
-
-├── results/                # Benchmark CSV outputs
-
-├── scripts/                # Helper scripts
-
-│   ├── pbs_script_*.pbs    # Job submissions
-
-│   ├── *_benchmark.sh      # Local execution script
-
-│   └── create_*.py         # Python script for visualization
-
-├── src/                    # Source code
-
-│   ├── main.c              # Main code where SpMV is used
-
-│   ├── mmio.c              # Matrix Market I/O helper
-
-|   └── matrix.c            # SpMV implementation
-
-└── README.md
+```text
+  .
+  ├── data/                   # Matrix market files (.mtx) used for testing
+  ├── plots/                  # Generated performance graphs
+  ├── results/                # Benchmark CSV outputs
+  ├── scripts/                # Helper scripts
+  │   ├── pbs_script_*.pbs      # Job submissions
+  │   ├── *_benchmark.sh        # Local execution script
+  │   └── create_*.py           # Python script for visualization
+  ├── src/                    # Source code
+  │   ├── main.c                # Main code where SpMV is used
+  │   ├── mmio.c                # Matrix Market I/O helper
+  |   └── matrix.c              # SpMV implementation
+  └── README.md
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -94,7 +86,7 @@ Here are the instruction to reproduce the project locally or in the Unitn cluste
 
 3. Replace the existing pointers in the cloned `data` folder with the actual matrix files;
 
-4. Now you can proceed as follows:
+4. Now you have two options based on where you want to run the program:
 
     a. If you want to run it locally you can run the shell scripts `/scripts/time_benchmark.sh` and `/scripts/perf_benchmark.sh`, making sure you have executed the permissions (`chmod +x /scripts/*.sh`);
 
