@@ -93,13 +93,13 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
     git clone https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git
 ```
 
-2. Download from the `data` directory the five matrices used;
+2. Download manually from the `data` github directory the five matrices used;
 
 3. Replace the existing pointers in the cloned `data` folder with the actual matrix files;
 
 4. Now you have two options based on where you want to run the program:
 
-    a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions :
+    a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions:
 
       ```sh
           chmod +x /scripts/*.sh
@@ -132,7 +132,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
               ./spmv data/af23560.mtx static 100 16 10
           ```
       
-      Notice: the results will be printed to standard output, they won't show up in the `/results` folder as the following steps mention.
+      Notice: in this case the results will be printed to standard output, they won't show up in the `/results` folder as the following steps mention.
 
 5. Results will be saved in the `/results` folder in csv format;
 
