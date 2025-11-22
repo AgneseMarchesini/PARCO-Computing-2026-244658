@@ -119,18 +119,20 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
       * Compile
 
           ```sh
-              gcc -fopenmp -Wall -O3 ./src/main.c ./src/mmio.c ./src/matrix.c -o spmv
+              gcc -Wall -O3 -fopenmp ./src/main.c ./src/mmio.c ./src/matrix.c -o spmv -lm
           ```
 
       * Run
 
           ```sh
-              ./spmv <matrix_file> <mode> <chunk_size> <threads> <runs>
+              ./spmv <matrix_file.mtx> <scheduling mode> <chunk size> <threads> <number_of_runs>
+              # Scheduling modes: seq (runs the sequential version), static, dynamic, guided
+
               # Example:
               ./spmv data/af23560.mtx static 100 16 10
           ```
       
-      Notice: the results will be showed in the terminal user interface, they won't show up in the `/results` folder as the following steps mention.
+      Notice: the results will be printed to standard output, they won't show up in the `/results` folder as the following steps mention.
 
 5. Results will be saved in the `/results` folder in csv format;
 
