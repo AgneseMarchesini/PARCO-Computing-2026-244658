@@ -44,12 +44,12 @@ In this project we use OpenMP to benchmark different combinations of threads, sc
 
 This was done on five matrices with different dimensions and degrees of sparsity.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ### Key Results
 
 * **Performance:** Achieved a speedup of up to **6.3x** compared to the sequential implementation.
 * **Bottleneck:** Scaling beyond 32 threads is limited by **L3 cache contention**, confirming SpMV is a memory-bound operation.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Project Structure
 
