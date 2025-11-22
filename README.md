@@ -46,6 +46,11 @@ This was done on five matrices with different dimensions and degrees of sparsity
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Key Results
+
+* **Performance:** Achieved a speedup of up to **6.3x** compared to the sequential implementation.
+* **Bottleneck:** Scaling beyond 32 threads is limited by **L3 cache contention**, confirming SpMV is a memory-bound operation.
+
 ## Project Structure
 
 ```text
@@ -68,13 +73,19 @@ This was done on five matrices with different dimensions and degrees of sparsity
 
 ## Reproducibility
 
+### Prerequisites and Dependencies
+
 Before running the project, ensure you have the following installed:
 
-* GCC Compiler with OpenMP support;
+* **GCC Compiler** with **OpenMP** support, required for parallel execution;
 
-* (Optional, only for plotting) Python.
+* **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/`) for parsing `.mtx` files.
 
-Here are the instruction to reproduce the project locally or in the Unitn cluster:
+* (Optional, only for plotting) **Python**;
+
+### Instructions
+
+Here are the instructions to reproduce the project locally or in the Unitn cluster:
 
 1. Clone the repo:
 
@@ -88,7 +99,7 @@ Here are the instruction to reproduce the project locally or in the Unitn cluste
 
 4. Now you have two options based on where you want to run the program:
 
-    a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions 
+    a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions :
 
       ```sh
           chmod +x /scripts/*.sh
@@ -96,16 +107,47 @@ Here are the instruction to reproduce the project locally or in the Unitn cluste
           /scripts/perf_benchmark.sh
       ```
 
-    b. If you are in the cluster you can subtim the jobs with:
+    b. If you are in the cluster you can submit the jobs with:
 
       ```sh
           qsub /scripts/pbs_script_perf.pbs
           qsub /scripts/pbs_scripts_time.pbs
       ```
 
+    c. If you prefer to run specific tests manually without the scripts:
+
+      * Compile
+
+          ```sh
+              gcc -fopenmp -Wall -O3 ./src/main.c ./src/mmio.c ./src/matrix.c -o spmv
+          ```
+
+      * Run
+
+          ```sh
+              ./spmv <matrix_file> <mode> <chunk_size> <threads> <runs>
+              # Example:
+              ./spmv data/af23560.mtx static 100 16 10
+          ```
+      
+      Notice: the results will be showed in the terminal user interface, they won't show up in the `/results` folder as the following steps mention.
+
 5. Results will be saved in the `/results` folder in csv format;
 
 6. To plot the results you can use the python scripts in the `/scripts` directory, they will create visual plots in the `/plots` folder.
+
+### Datasets
+The project benchmarks the following matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/):
+
+| Matrix Name | Rows | Columns | Non-zeros | Sparsity [%] | File size [KB] |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **af23560** | 23,560 | 23,560 | 460,598 | 0.08298 | 15,164 |
+| **twotone** | 120,750 | 120,750 | 1,206,265 | 0.00827 | 24,107 |
+| **tmt_unsym** | 917,825 | 917,825 | 4,584,801 | 0.00054 | 145,259 |
+| **atmosmodl** | 1,489,752 | 1,489,752 | 10,319,760 | 0.00046 | 214,022 |
+| **Freescale1** | 3,428,755 | 3,428,755 | 17,052,626 | 0.00015 | 632,885 |
+
+**Note:** Ensure the downloaded `.mtx` files are placed inside the `data/` directory.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
