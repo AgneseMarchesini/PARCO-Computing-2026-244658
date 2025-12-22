@@ -32,10 +32,14 @@ int main(int argc, char *argv[]){
 
     // Variables for local partition
     int my_M;
+    // my_N = N_global -> not needed
     int my_nz;
     int *my_row_len = NULL; // local row lenght
     int *my_cols = NULL; // local column indices
     int *my_vals = NULL; // local nnz values
+
+    int M_global;
+    int N_global;
 
     if(rank == 0){
         if (matrix_load_from_mtx(matrix_file, &matrix) != 0) {
@@ -48,25 +52,31 @@ int main(int argc, char *argv[]){
     }
 
     // Broadcasting the matrix dimensions
+    // MPI_Bcast( void* buffer , MPI_Count count , MPI_Datatype datatype , int root , MPI_Comm comm);
     MPI_Bcast(&M_global, 1, MPI_INT, 0, MPI_COMM_WORLD); 
     MPI_Bcast(&N_global, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if(rank == 0){   
         // Initialize random dense vector
         srand((unsigned int)time(NULL));
-        for(i = 0; i < matrix.N; i++) {
-            v[i] = (double)(rand() % 10);
+        for(int i = 0; i < matrix.N; i++) {
+            v[i] = (double)(rand());
         }
 
 
         // Calculating how big the nnz and rows for the buffer
         int *count_nz = (int*)calloc(size, sizeof(int));
         int *count_rows = (int*)calloc(size, sizeof(int));
+        if (count_nz == NULL || count_rows == NULL) {
+            fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
         int owner;
         for(int row = 0; row < matrix.M; ++row){
             owner = row % size;
             count_rows[owner]++
-            count_nz[owner] += (matrix.row_pnt[row+1] - matrix.row_pnt[i]);
+            count_nz[owner] += (matrix.row_pnt[row+1] - matrix.row_pnt[row]);
         }
         
         for(int dest=0; dest < size; ++dest){
@@ -77,6 +87,11 @@ int main(int argc, char *argv[]){
             int *buf_row_len = (int*)malloc(dest_rows * sizeof(int));
             int *buf_cols = (int*)malloc(dest_nz * sizeof(int));
             double *buf_vals = (double*)malloc(dest_nz * sizeof(double));
+            if (buf_row_len == NULL || buf_cols == NULL || buf_vals) {
+            fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
 
             //
             int current_index = 0;
@@ -126,6 +141,11 @@ int main(int argc, char *argv[]){
         my_row_len = (int*)malloc(my_M * sizeof(int));
         my_cols = (int*)malloc(my_nz* sizeof(int));
         my_vals = (double*)malloc(my_nz* sizeof(double));
+        if (my_row_len == NULL || my_cols == NULL || my_vals == NULL) {
+            fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+            return 1;
+        }
 
         // Receive buff
         MPI_Recv(my_row_len, my_M, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
@@ -133,18 +153,52 @@ int main(int argc, char *argv[]){
         MPI_Recv(my_vals, my_nz, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &status);
     }
 
-    /*
-    double* v = (double*)malloc(matrix.N * sizeof(double)); // dense random vector
-        double* y = (double*)calloc(matrix.M, sizeof(double)); // result vector
-        if (v == NULL || y == NULL) {
-            fprintf(stderr, "CRITICAL ERROR: Malloc failed. (Matrix M/N: %d, %d)\n", matrix.M, matrix.N);
-            return 1;
+    // Local SpMV
+
+    // we have the row len, we need row pointers:
+    int *my_row_pnt = (int*)malloc((my_M+1) * sizeof(int));
+    if (my_row_pnt == NULL) {
+        fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+    my_row_pnt[0] = 0;
+    for (int i = 0; i < my_M; i++) {
+        my_row_ptr[i+1] = my_row_ptr[i] + my_row_len[i];
+    }
+
+    double *v = (double*)malloc(N_global * sizeof(double)); // random dense vector
+    double *y = (double*)calloc(my_M, sizeof(double)); // result vector
+
+     if (v == NULL || y == NULL) {
+        fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+
+    if (rank == 0){ 
+        srand(time(NULL));
+        for(int i = 0; i < N_global; ++i){
+            v[i] = (double) rand() % 10;
         }
-    */
+    }
+
+    // 0 broadcasts the random vector
+    MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Multiplication
+    SparseMatrixCSR local_matrix;
+    matrix_init(&local_matrix, my_M, N_global, my_nz, my_row_pnt, my_cols, my_vals);
+    // SpMV implementation from D1
+    matrix_vector_mul_sequential(&local_matrix, v, y);
+
 
     free(my_row_len);
     free(my_cols);
     free(my_vals);
+    free(my_row_pnt);
+    free(v);
+    free(y);
     MPI_Finalize();
     return 0;
 }

@@ -13,6 +13,9 @@ typedef struct {
     double* val_pnt;// Values of non-zero entries CSR
 } SparseMatrixCSR;
 
+// Manual initialization of a matrix
+void matrix_init(SparseMatrixCSR* matrix, int M, int N, int nz, int* row_pnt, int* col_pnt, double* val_pnt);
+
 // Load a sparse matrix from a Matrix Market (.mtx) file into CSR format
 int matrix_load_from_mtx(const char* filename, SparseMatrixCSR* matrix);
 
