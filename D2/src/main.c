@@ -65,7 +65,8 @@ int main(int argc, char *argv[]){
         int *count_nz = (int*)calloc(size, sizeof(int));
         int *count_rows = (int*)calloc(size, sizeof(int));
         if (count_nz == NULL || count_rows == NULL) {
-            fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+            fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
+            fprintf(stderr, "count_rows, count_nz\n"); //debugging
             MPI_Abort(MPI_COMM_WORLD, 1);
             return 1;
         }
@@ -85,7 +86,8 @@ int main(int argc, char *argv[]){
             int *buf_cols = (int*)malloc(dest_nz * sizeof(int));
             double *buf_vals = (double*)malloc(dest_nz * sizeof(double));
             if (buf_row_len == NULL || buf_cols == NULL || buf_vals) {
-            fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+            fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
+            fprintf(stderr, "buf_row_len, buf_cols, buf_vals\n"); //debugging
             MPI_Abort(MPI_COMM_WORLD, 1);
             return 1;
         }
@@ -139,7 +141,8 @@ int main(int argc, char *argv[]){
         my_cols = (int*)malloc(my_nz* sizeof(int));
         my_vals = (double*)malloc(my_nz* sizeof(double));
         if (my_row_len == NULL || my_cols == NULL || my_vals == NULL) {
-            fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+            fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
+            fprintf(stderr, "my_row_len, my_cols, my_vals\n"); //debugging
             MPI_Abort(MPI_COMM_WORLD, 1);
             return 1;
         }
@@ -155,7 +158,8 @@ int main(int argc, char *argv[]){
     // we have the row len, we need row pointers:
     int *my_row_pnt = (int*)malloc((my_M+1) * sizeof(int));
     if (my_row_pnt == NULL) {
-        fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+        fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
+        fprintf(stderr, "my_row_pnt\n"); //debugging
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
@@ -168,7 +172,8 @@ int main(int argc, char *argv[]){
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector
 
      if (v == NULL || y == NULL) {
-        fprintf(stderr, "CRITICAL ERROR: Malloc failed.)\n");
+        fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
+        fprintf(stderr, "v, y\n"); //debugging
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
