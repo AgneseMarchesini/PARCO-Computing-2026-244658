@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
             int *buf_row_len = (int*)malloc(dest_rows * sizeof(int));
             int *buf_cols = (int*)malloc(dest_nz * sizeof(int));
             double *buf_vals = (double*)malloc(dest_nz * sizeof(double));
-            if (buf_row_len == NULL || buf_cols == NULL || buf_vals) {
+            if (buf_row_len == NULL || buf_cols == NULL || buf_vals == NULL) {
             fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
             fprintf(stderr, "buf_row_len, buf_cols, buf_vals\n"); //debugging
             MPI_Abort(MPI_COMM_WORLD, 1);
