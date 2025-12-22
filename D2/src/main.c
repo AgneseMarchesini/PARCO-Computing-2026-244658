@@ -7,6 +7,9 @@
 #include <time.h>
 
 int main(int argc, char *argv[]){
+    double start, end;
+    double time;
+
     int rank, size;
     MPI_Status status;
 
@@ -36,7 +39,7 @@ int main(int argc, char *argv[]){
     int my_nz;
     int *my_row_len = NULL; // local row lenght
     int *my_cols = NULL; // local column indices
-    int *my_vals = NULL; // local nnz values
+    double *my_vals = NULL; // local nnz values
 
     int M_global;
     int N_global;
@@ -57,13 +60,7 @@ int main(int argc, char *argv[]){
     MPI_Bcast(&N_global, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if(rank == 0){   
-        // Initialize random dense vector
-        srand((unsigned int)time(NULL));
-        for(int i = 0; i < matrix.N; i++) {
-            v[i] = (double)(rand());
-        }
-
-
+        
         // Calculating how big the nnz and rows for the buffer
         int *count_nz = (int*)calloc(size, sizeof(int));
         int *count_rows = (int*)calloc(size, sizeof(int));
@@ -75,7 +72,7 @@ int main(int argc, char *argv[]){
         int owner;
         for(int row = 0; row < matrix.M; ++row){
             owner = row % size;
-            count_rows[owner]++
+            count_rows[owner]++;
             count_nz[owner] += (matrix.row_pnt[row+1] - matrix.row_pnt[row]);
         }
         
@@ -164,7 +161,7 @@ int main(int argc, char *argv[]){
     }
     my_row_pnt[0] = 0;
     for (int i = 0; i < my_M; i++) {
-        my_row_ptr[i+1] = my_row_ptr[i] + my_row_len[i];
+        my_row_pnt[i+1] = my_row_pnt[i] + my_row_len[i];
     }
 
     double *v = (double*)malloc(N_global * sizeof(double)); // random dense vector
@@ -179,7 +176,8 @@ int main(int argc, char *argv[]){
     if (rank == 0){ 
         srand(time(NULL));
         for(int i = 0; i < N_global; ++i){
-            v[i] = (double) rand() % 10;
+            //v[i] = (double) (rand() % 10);
+            v[i] = 1.0; // for debugging
         }
     }
 
@@ -189,8 +187,22 @@ int main(int argc, char *argv[]){
     // Multiplication
     SparseMatrixCSR local_matrix;
     matrix_init(&local_matrix, my_M, N_global, my_nz, my_row_pnt, my_cols, my_vals);
+
+    MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
+
+    GET_TIME(start);
     // SpMV implementation from D1
     matrix_vector_mul_sequential(&local_matrix, v, y);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    GET_TIME(end);
+    time = (end - start) * 1000.0; //milliseconds
+
+    if(rank==0){
+        printf("Rank %d Row 0 Sum: %f\n", rank, y[0]);
+        printf("Time: %f\n", time);
+    }
 
 
     free(my_row_len);
