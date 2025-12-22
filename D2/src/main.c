@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[]){
     double start, end;
-    double time;
+    double time_ms;
 
     int rank, size;
     MPI_Status status;
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]){
     }
 
     if (rank == 0){ 
-        srand(time(NULL));
+        srand((unsigned int)time(NULL));
         for(int i = 0; i < N_global; ++i){
             //v[i] = (double) (rand() % 10);
             v[i] = 1.0; // for debugging
@@ -197,11 +197,11 @@ int main(int argc, char *argv[]){
     MPI_Barrier(MPI_COMM_WORLD);
 
     GET_TIME(end);
-    time = (end - start) * 1000.0; //milliseconds
+    time_ms = (end - start) * 1000.0; //milliseconds
 
     if(rank==0){
         printf("Rank %d Row 0 Sum: %f\n", rank, y[0]);
-        printf("Time: %f\n", time);
+        printf("Time: %f\n", time_ms);
     }
 
 
