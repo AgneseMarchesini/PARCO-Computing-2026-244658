@@ -1,0 +1,48 @@
+#!/bin/bash
+# Job name
+#PBS -N strong_scaling
+
+# Output and error file
+#PBS -o results/strong_scaling.out
+#PBS -e results/strong_scaling.err
+
+# Queue name
+#PBS -q short_cpuQ
+
+# Set the max wall time
+#PBS -l walltime=01:00:00
+
+# Set the other things
+#PBS -l select=2:ncpus=64:mpiprocs=64
+
+module load gcc91 || { echo "module load failed"; exit 1; }
+module load perf || { echo "module load failed"; exit 1; }
+module load mpich-3.2 || { echo "module load failed"; exit 1; }
+
+cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; } # go to the dir where the qsub was run
+
+EXECUTABLE="./spmv"
+MATRICES=(
+    "venkat25.mtx"
+)
+DATA_DIR="D2/data"
+RESULTS_DIR="D2/results"
+STRONG_SCALING_CSV="$RESULTS_DIR/strong_scaling.csv"
+
+mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
+
+# Setup
+mkdir -p $RESULTS_DIR
+
+echo "Processes,Time" > $STRONG_SCALING_CSV
+
+for MATRIX_NAME in "${MATRICES[@]}"
+do
+    for P in 1 2 4 8 16 32 64
+    do
+        echo "Running with $P processes..."
+        TIME=$(echo $(mpirun -np $P ./mpi_spmv $MATRIX_FILE) | awk '{print $1}')
+        "$P,$TIME" >> $STRONG_SCALING_CSV
+    done
+done
+

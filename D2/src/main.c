@@ -181,8 +181,8 @@ int main(int argc, char *argv[]){
     if (rank == 0){ 
         srand((unsigned int)time(NULL));
         for(int i = 0; i < N_global; ++i){
-            //v[i] = (double) (rand() % 10);
-            v[i] = 1.0; // for debugging
+            v[i] = (double) (rand() % 10);
+            //v[i] = 1.0; // for debugging
         }
     }
 
@@ -204,10 +204,13 @@ int main(int argc, char *argv[]){
     GET_TIME(end);
     time_ms = (end - start) * 1000.0; //milliseconds
 
+    /*
     if(rank==0){
         printf("Rank %d Row 0 Sum: %f\n", rank, y[0]);
         printf("Time: %f\n", time_ms);
     }
+    */ //debugging
+    printf("%f\n", time_ms);
 
 
     free(my_row_len);
