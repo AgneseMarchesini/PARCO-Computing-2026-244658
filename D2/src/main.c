@@ -199,14 +199,14 @@ int main(int argc, char *argv[]){
 
     GET_TIME(start);
     // SpMV implementation from D1
-    for(int i=0; i<iterations; i++){
+    //for(int i=0; i<iterations; i++){
         matrix_vector_mul_sequential(&local_matrix, v, y);
-    }
+    //}
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     GET_TIME(end);
-    time_ms = (end - start) * 1000.0 / iterations; //milliseconds
+    time_ms = (end - start) * 1000.0; //milliseconds
 
     /*
     if(rank==0){
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]){
     double max_time = 0.0;
     MPI_Reduce(&time_ms, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    printf("Max_Time: %f \n", max_time);
+    printf("Max_Time: %e \n", max_time);
 
     free(my_row_len);
     free(my_cols);
