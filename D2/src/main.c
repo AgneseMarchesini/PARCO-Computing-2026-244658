@@ -18,12 +18,12 @@ int main(int argc, char *argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    /*
     if (size < 2) {
-        if (rank == 0)
-            fprintf(stderr, "Run with at least 2 processes.\n");
         MPI_Finalize();
         return 1;
     }
+    */
 
     if(argc != 2){
         printf("Usage: ");
@@ -195,19 +195,24 @@ int main(int argc, char *argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
-    int iterations = 100;
+    int iterations = 10000;
 
     GET_TIME(start);
     // SpMV implementation from D1
-    //for(int i=0; i<iterations; i++){
+    for(int i=0; i<iterations; i++){
         matrix_vector_mul_sequential(&local_matrix, v, y);
-    //}
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     GET_TIME(end);
-    time_ms = (end - start) * 1000.0; //milliseconds
+    time_ms = (end - start) * 1000.0 / iterations; //milliseconds
 
+    double checksum = 0.0;
+    for(int i=0; i<my_M; i++) checksum += y[i];
+    // We don't really care about the value, just that we used 'y'
+    if (rank == 0) printf("DEBUG_CHECKSUM: %f\n", checksum);
+    
     /*
     if(rank==0){
         printf("Rank %d Row 0 Sum: %f\n", rank, y[0]);
@@ -221,7 +226,9 @@ int main(int argc, char *argv[]){
     double max_time = 0.0;
     MPI_Reduce(&time_ms, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    printf("Max_Time: %e \n", max_time);
+    if (rank == 0) {
+        printf("Max_Time: %e \n", max_time);
+    }
 
     free(my_row_len);
     free(my_cols);
