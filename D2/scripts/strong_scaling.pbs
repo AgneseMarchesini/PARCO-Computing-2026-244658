@@ -10,10 +10,10 @@
 #PBS -q short_cpuQ
 
 # Set the max wall time
-#PBS -l walltime=01:00:00
+#PBS -l walltime=03:00:00
 
 # Set the other things
-#PBS -l select=2:ncpus=64:mpiprocs=64
+#PBS -l select=2:ncpus=64:mpiprocs=64:mem=32gb
 
 module load gcc91 || { echo "module load failed"; exit 1; }
 module load perf || { echo "module load failed"; exit 1; }
@@ -24,6 +24,10 @@ cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; }
 EXECUTABLE="./spmv"
 MATRICES=(
     "venkat25.mtx"
+    "atmosmodl.mtx"
+    "rajat31.mtx"
+    "circuit5M.mtx"
+    "cage15.mtx"
 )
 DATA_DIR="D2/data"
 RESULTS_DIR="D2/results"
@@ -34,21 +38,21 @@ mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-echo "Processes,Time" > $STRONG_SCALING_CSV
+echo "Matrix,Processes,Time" > $STRONG_SCALING_CSV
 
 for MATRIX_NAME in "${MATRICES[@]}"
 do
-    for P in 1 2 4 8 16 32 64
+    for P in 1 2 4 8 16 32 64 128
     do
         echo "Running with $P processes..."
 
-        OUTPUT=$(mpirun -np $P $EXECUTABLE $"$DATA_DIR/$MATRIX_NAME")
+        OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
 
         LINE=$(echo "$OUTPUT" | grep "Max_Time")
 
         TIME=$(echo $LINE | awk '{print $2}')
 
-        echo "$P,$TIME" >> $STRONG_SCALING_CSV
+        echo "$MATRIX_NAME,$P,$TIME" >> $STRONG_SCALING_CSV
     done
 done
 
