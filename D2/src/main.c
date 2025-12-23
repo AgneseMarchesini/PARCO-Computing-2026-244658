@@ -210,8 +210,6 @@ int main(int argc, char *argv[]){
         printf("Time: %f\n", time_ms);
     }
     */ //debugging
-    
-    double max_time;
 
     // Calculate the max time among all processes
     //MPI_Reduce( const void* sendbuf , void* recvbuf , MPI_Count count , MPI_Datatype datatype , MPI_Op op , int root , MPI_Comm comm);
@@ -221,7 +219,7 @@ int main(int argc, char *argv[]){
         int rank; 
     } local_data, max_data;
 
-    local_data.val = local_elapsed;
+    local_data.val = time_ms;
     local_data.rank = rank;
 
     // MPI_DOUBLE_INT requires a struct with val and rank
