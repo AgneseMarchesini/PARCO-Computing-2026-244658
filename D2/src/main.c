@@ -224,7 +224,7 @@ int main(int argc, char *argv[]){
 
     // MPI_DOUBLE_INT requires a struct with val and rank
     // MPI_MAXLOCK finds the max and the rank id of the max
-    MPI_Reduce(&local_elapsed, &max_data, 1, MPI_DOUBLE_INT, MPI_MAXLOC, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&local_data, &max_data, 1, MPI_DOUBLE_INT, MPI_MAXLOC, 0, MPI_COMM_WORLD);
 
     printf("Max_Time: %f (Rank: %d )\n", max_data.val, max_data.rank);
 
