@@ -34,7 +34,7 @@ mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-echo "Processes,Rank,Time" > $STRONG_SCALING_CSV
+echo "Processes,Time" > $STRONG_SCALING_CSV
 
 for MATRIX_NAME in "${MATRICES[@]}"
 do
@@ -48,9 +48,7 @@ do
 
         TIME=$(echo $LINE | awk '{print $2}')
 
-        RANK=$(echo $LINE | awk '{print $4}')
-
-        echo "$P,$RANK,$TIME" >> $STRONG_SCALING_CSV
+        echo "$P,$TIME" >> $STRONG_SCALING_CSV
     done
 done
 

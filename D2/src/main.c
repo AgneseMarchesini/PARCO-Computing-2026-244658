@@ -214,19 +214,10 @@ int main(int argc, char *argv[]){
     // Calculate the max time among all processes
     //MPI_Reduce( const void* sendbuf , void* recvbuf , MPI_Count count , MPI_Datatype datatype , MPI_Op op , int root , MPI_Comm comm);
 
-    struct { 
-        double val; 
-        int rank; 
-    } local_data, max_data;
+    double max_time = 0.0;
+    MPI_Reduce(&time_ms, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    local_data.val = time_ms;
-    local_data.rank = rank;
-
-    // MPI_DOUBLE_INT requires a struct with val and rank
-    // MPI_MAXLOCK finds the max and the rank id of the max
-    MPI_Reduce(&local_data, &max_data, 1, MPI_DOUBLE_INT, MPI_MAXLOC, 0, MPI_COMM_WORLD);
-
-    printf("Max_Time: %f (Rank: %d )\n", max_data.val, max_data.rank);
+    printf("Max_Time: %f \n", max_time);
 
     free(my_row_len);
     free(my_cols);
