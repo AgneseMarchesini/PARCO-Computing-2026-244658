@@ -42,7 +42,7 @@ do
     do
         echo "Running with $P processes..."
 
-        OUTPUT=$(mpirun -np $P $EXECUTABLE $"$DATA_DIR/$MATRIX_FILE")
+        OUTPUT=$(mpirun -np $P $EXECUTABLE $"$DATA_DIR/$MATRIX_NAME")
 
         TIME=$(echo $OUTPUT | grep "Max_Time" | awk '{print $2}')
 
