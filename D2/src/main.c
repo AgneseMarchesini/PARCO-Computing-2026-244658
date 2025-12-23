@@ -195,14 +195,18 @@ int main(int argc, char *argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
+    int iterations = 100;
+
     GET_TIME(start);
     // SpMV implementation from D1
-    matrix_vector_mul_sequential(&local_matrix, v, y);
+    for(int i=0; i<iterations; i++){
+        matrix_vector_mul_sequential(&local_matrix, v, y);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     GET_TIME(end);
-    time_ms = (end - start) * 1000.0; //milliseconds
+    time_ms = (end - start) * 1000.0 / iterations; //milliseconds
 
     /*
     if(rank==0){
