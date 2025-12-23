@@ -44,9 +44,11 @@ do
 
         OUTPUT=$(mpirun -np $P $EXECUTABLE $"$DATA_DIR/$MATRIX_NAME")
 
-        TIME=$(echo $OUTPUT | grep "Max_Time" | awk '{print $2}')
+        LINE=$(echo "$OUTPUT" | grep "Max_Time")
 
-        RANK=$(echo $OUTPUT | grep "Max_Time" | awk '{print $4}')
+        TIME=$(echo $LINE | awk '{print $2}')
+
+        RANK=$(echo $LINE | awk '{print $4}')
 
         echo "$P,$RANK,$TIME" >> $STRONG_SCALING_CSV
     done
