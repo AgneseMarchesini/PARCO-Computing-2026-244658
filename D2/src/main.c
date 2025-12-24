@@ -227,7 +227,7 @@ int main(int argc, char *argv[]){
     MPI_Reduce(&time_ms, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        printf("Max_Time: %e \n", max_time);
+        printf("Max_Time: %f \n", max_time);
     }
 
     free(my_row_len);
