@@ -29,7 +29,7 @@ MATRICES=(
     "circuit5M.mtx"
     "cage15.mtx"
 )
-DATA_DIR="D2/data"
+DATA_DIR="D2/data/strong_scaling_matrices"
 RESULTS_DIR="D2/results"
 STRONG_SCALING_CSV="$RESULTS_DIR/strong_scaling.csv"
 

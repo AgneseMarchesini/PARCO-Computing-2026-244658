@@ -1,0 +1,49 @@
+#!/bin/bash
+# Job name
+#PBS -N weak_scaling
+
+# Output and error file
+#PBS -o D2/results/weak_scaling.out
+#PBS -e D2/results/weak_scaling.err
+
+# Queue name
+#PBS -q short_cpuQ
+
+# Set the max wall time
+#PBS -l walltime=03:00:00
+
+# Set the other things
+#PBS -l select=2:ncpus=64:mpiprocs=64:mem=32gb
+
+module load gcc91 || { echo "module load failed"; exit 1; }
+module load perf || { echo "module load failed"; exit 1; }
+module load mpich-3.2.1--gcc-9.1.0 || { echo "module load failed"; exit 1; }
+
+cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; } # go to the dir where the qsub was run
+
+EXECUTABLE="./spmv"
+DATA_DIR="D2/data/weak_scaling_matrices"
+RESULTS_DIR="D2/results"
+WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling.csv"
+
+mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
+
+# Setup
+mkdir -p $RESULTS_DIR
+
+echo "Matrix,Processes,Time" > $WEAK_SCALING_CSV
+
+for P in 1 2 4 8 16 32 64 128
+do
+    ROWS=$((256 * P))
+    MATRIX_NAME="weak_${P}p_${ROWS}.mtx"
+    echo "Running with $P processes... ($MATRIX_NAME)"
+    
+    OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
+
+    LINE=$(echo "$OUTPUT" | grep "Max_Time")
+
+    TIME=$(echo $LINE | awk '{print $2}')
+
+    echo "$MATRIX_NAME,$P,$TIME" >> $WEAK_SCALING_CSV
+done
