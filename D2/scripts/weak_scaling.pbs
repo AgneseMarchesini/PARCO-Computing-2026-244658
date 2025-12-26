@@ -10,7 +10,7 @@
 #PBS -q short_cpuQ
 
 # Set the max wall time
-#PBS -l walltime=03:00:00
+#PBS -l walltime=01:00:00
 
 # Set the other things
 #PBS -l select=2:ncpus=64:mpiprocs=64:mem=32gb
@@ -38,7 +38,7 @@ do
     ROWS=$((256 * P))
     MATRIX_NAME="weak_${P}p_${ROWS}.mtx"
     echo "Running with $P processes... ($MATRIX_NAME)"
-    
+
     OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
 
     LINE=$(echo "$OUTPUT" | grep "Max_Time")
