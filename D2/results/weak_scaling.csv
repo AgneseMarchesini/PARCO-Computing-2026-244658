@@ -1,0 +1,9 @@
+Matrix,Processes,Time
+weak_1p_256.mtx,1,0.002982
+weak_2p_512.mtx,2,0.003002
+weak_4p_1024.mtx,4,0.002426
+weak_8p_2048.mtx,8,0.002175
+weak_16p_4096.mtx,16,0.002231
+weak_32p_8192.mtx,32,0.002568
+weak_64p_16384.mtx,64,0.003116
+weak_128p_32768.mtx,128,0.003162
