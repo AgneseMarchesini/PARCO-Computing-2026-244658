@@ -8,7 +8,8 @@
 
 int main(int argc, char *argv[]){
     double start, end;
-    double time_ms;
+    double time_comm = 0.0;
+    double time_comp = 0.0;
 
     int rank, size;
     MPI_Status status;
@@ -186,9 +187,6 @@ int main(int argc, char *argv[]){
         }
     }
 
-    // 0 broadcasts the random vector
-    MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
     // Multiplication
     SparseMatrixCSR local_matrix;
     matrix_init(&local_matrix, my_M, N_global, my_nz, my_row_pnt, my_cols, my_vals);
@@ -197,20 +195,30 @@ int main(int argc, char *argv[]){
 
     int iterations = 10000;
 
-    GET_TIME(start);
     // SpMV implementation from D1
     for(int i=0; i<iterations; i++){
+
+        GET_TIME(start);
+        // 0 broadcasts the random vector
+        MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        GET_TIME(end);
+
+        time_comm += (end-start);
+
+        GET_TIME(start);
         matrix_vector_mul_sequential(&local_matrix, v, y);
+        GET_TIME(end);
+
+        time_comp += (end-start);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    GET_TIME(end);
-    time_ms = (end - start) * 1000.0 / iterations; //milliseconds
+    double avg_comm = (time_comm * 1000.0) / iterations;
+    double avg_comp = (time_comp * 1000.0) / iterations;
 
     double checksum = 0.0;
     for(int i=0; i<my_M; i++) checksum += y[i];
-    // We don't really care about the value, just that we used 'y'
     if (rank == 0) printf("DEBUG_CHECKSUM: %f\n", checksum);
     
     /*
@@ -223,11 +231,13 @@ int main(int argc, char *argv[]){
     // Calculate the max time among all processes
     //MPI_Reduce( const void* sendbuf , void* recvbuf , MPI_Count count , MPI_Datatype datatype , MPI_Op op , int root , MPI_Comm comm);
 
-    double max_time = 0.0;
-    MPI_Reduce(&time_ms, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    double max_comm = 0.0;
+    double max_comp = 0.0;
+    MPI_Reduce(&avg_comm, &max_comm, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&avg_comp, &max_comp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        printf("Max_Time: %f \n", max_time);
+        printf("Max_Comm: %f Max_Comp: %f \n", max_comm, max_comp);
     }
 
     free(my_row_len);

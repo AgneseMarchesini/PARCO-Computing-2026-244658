@@ -31,7 +31,7 @@ mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-echo "Matrix,Processes,Time" > $WEAK_SCALING_CSV
+echo "Matrix,Processes,T_Comm,T_Comp" > $WEAK_SCALING_CSV
 
 for P in 1 2 4 8 16 32 64 128
 do
@@ -41,9 +41,11 @@ do
 
     OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
 
-    LINE=$(echo "$OUTPUT" | grep "Max_Time")
+    LINE=$(echo "$OUTPUT" | grep "Max_Comm")
 
-    TIME=$(echo $LINE | awk '{print $2}')
+    TIME_COMM=$(echo $LINE | awk '{print $2}')
 
-    echo "$MATRIX_NAME,$P,$TIME" >> $WEAK_SCALING_CSV
+    TIME_COMP=$(echo $LINE | awk '{print $4}')
+
+    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP" >> $WEAK_SCALING_CSV
 done
