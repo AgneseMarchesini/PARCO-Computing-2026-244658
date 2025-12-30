@@ -22,10 +22,10 @@ cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; }
 
 EXECUTABLE="./spmv"
 MATRICES=(
-    # "venkat25.mtx"
-    # "atmosmodl.mtx"
-    # "rajat31.mtx"
-    # "circuit5M.mtx"
+    "venkat25.mtx"
+    "atmosmodl.mtx"
+    "rajat31.mtx"
+    "circuit5M.mtx"
     "cage15.mtx"
 )
 DATA_DIR="D2/data/strong_scaling_matrices"
@@ -37,7 +37,7 @@ mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-# echo "Matrix,Processes,T_Comm,T_Comp" > $STRONG_SCALING_CSV
+echo "Matrix,Processes,T_Comm,T_Comp" > $STRONG_SCALING_CSV
 
 for MATRIX_NAME in "${MATRICES[@]}"
 do

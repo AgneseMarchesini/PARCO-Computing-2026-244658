@@ -1,3 +1,4 @@
+#  python3 .\D2\scripts\plots_strong_scaling.py
 import pandas as pd
 import matplotlib.pyplot as plt
 import os

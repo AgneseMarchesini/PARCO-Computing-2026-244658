@@ -193,7 +193,7 @@ int main(int argc, char *argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
-    int iterations = 10000;
+    int iterations = 1;
 
     // SpMV implementation from D1
     for(int i=0; i<iterations; i++){
