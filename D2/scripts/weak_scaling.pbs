@@ -58,5 +58,5 @@ do
 
     VOLUME=$(echo "$OUTPUT" | grep "Comm_Volume_MB" | awk '{print $2}')
 
-    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$GFLOPS,$MEM_MB,$NZ_MIZ,$NZ_MAX,$NZ_AVG,$VOLUME" >> $WEAK_SCALING_CSV
+    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$GFLOPS,$MEM_MB,$NZ_MIN,$NZ_MAX,$NZ_AVG,$VOLUME" >> $WEAK_SCALING_CSV
 done
