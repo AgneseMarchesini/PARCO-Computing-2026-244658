@@ -38,8 +38,9 @@ df['T_Comm'] = pd.to_numeric(df['T_Comm'], errors='coerce')
 df['T_Comp'] = pd.to_numeric(df['T_Comp'], errors='coerce')
 df = df.dropna()
 
-# Use T_Comp for Speedup calculation based on the user's snippet logic
 df['Speedup'] = 0.0
+df['Efficiency'] = 0.0
+
 for mat in df['Matrix'].unique():
     subset = df[df['Matrix'] == mat]
     t1_row = subset[subset['Processes'] == 1]
@@ -47,9 +48,12 @@ for mat in df['Matrix'].unique():
     if not t1_row.empty:
         t1 = t1_row['T_Comp'].values[0]
         mask = df['Matrix'] == mat
+        # Speedup = T1 / Tp
         df.loc[mask, 'Speedup'] = t1 / df.loc[mask, 'T_Comp']
+        # Efficiency = Speedup / P
+        df.loc[mask, 'Efficiency'] = df.loc[mask, 'Speedup'] / df.loc[mask, 'Processes']
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
 
 plotted_matrices = []
 ticks_x = [1, 2, 4, 8, 16, 32, 64, 128]
@@ -59,6 +63,7 @@ for mat in MATRIX_ORDER:
         subset = df[df['Matrix'] == mat].sort_values('Processes')
         ax1.plot(subset['Processes'], subset['T_Comp'], marker='o', label=mat)
         ax2.plot(subset['Processes'], subset['Speedup'], marker='o', label=mat)
+        ax3.plot(subset['Processes'], subset['Efficiency'], marker='o', label=mat)
         plotted_matrices.append(mat)
 
 # Plot 1: Execution Time
@@ -85,6 +90,19 @@ ax2.set_xticks(ideal_x)
 ax2.set_xticklabels(ideal_x)
 ax2.grid(True, which="both", ls="-", alpha=0.5)
 ax2.legend(plotted_matrices + ['Ideal'], title="Matrices")
+
+# Plot 3: Efficiency
+ax3.axhline(y=1.0, color='k', linestyle='--', label='Ideal (1.0)', linewidth=2)
+
+ax3.set_title('Strong Scaling: Efficiency', fontsize=14)
+ax3.set_xlabel('Number of Processes', fontsize=12)
+ax3.set_ylabel('Efficiency (Speedup/P)', fontsize=12)
+ax3.set_xscale('log')
+ax3.set_xticks(ideal_x)
+ax3.set_xticklabels(ideal_x)
+ax3.set_ylim(0, 1.1) # Efficiency typically between 0 and 1
+ax3.grid(True, which="both", ls="-", alpha=0.5)
+ax3.legend(plotted_matrices + ['Ideal'], title="Matrices")
 
 out_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
 plt.tight_layout()

@@ -30,7 +30,7 @@ mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-echo "Matrix,Processes,T_Comm,T_Comp,GFLOPS" > $WEAK_SCALING_CSV
+echo "Matrix,Processes,T_Comm,T_Comp,GFLOPS,Mem_MB,NZ_Min,NZ_Max,NZ_Avg,Volume_MB" > $WEAK_SCALING_CSV
 
 for P in 1 2 4 8 16 32 64 128
 do
@@ -48,5 +48,15 @@ do
 
     GFLOPS=$(echo $LINE | awk '{print $6}')
 
-    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$GFLOPS" >> $WEAK_SCALING_CSV
+    MEM_MB=$(echo $LINE | awk '{print $8}')
+
+    NZ_MIN=$(echo "$OUTPUT" | grep "NZ_Min" | awk '{print $2}')
+
+    NZ_MAX=$(echo "$OUTPUT" | grep "NZ_Max" | awk '{print $2}')
+
+    NZ_AVG=$(echo "$OUTPUT" | grep "NZ_Avg" | awk '{print $2}')
+
+    VOLUME=$(echo "$OUTPUT" | grep "Comm_Volume_MB" | awk '{print $2}')
+
+    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$GFLOPS,$MEM_MB,$NZ_MIZ,$NZ_MAX,$NZ_AVG,$VOLUME" >> $WEAK_SCALING_CSV
 done

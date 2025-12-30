@@ -171,10 +171,25 @@ int main(int argc, char *argv[]){
         my_row_pnt[i+1] = my_row_pnt[i] + my_row_len[i];
     }
 
+    int *recvcounts_vec = (int *)malloc(size * sizeof(int));
+    int *displs_vec = (int *)malloc(size * sizeof(int));
+
+    // every rank sends its my_M to everyone else
+    MPI_Allgather(&my_M, 1, MPI_INT, recvcounts_vec, 1, MPI_INT, MPI_COMM_WORLD);
+
+    // calculate displacements (where each rank's chunk starts in the global vector)
+    displs_vec[0] = 0;
+    for (int i = 1; i < size; i++) {
+        displs_vec[i] = displs_vec[i-1] + recvcounts_vec[i-1];
+    }
+
     double *v = (double*)malloc(N_global * sizeof(double)); // random dense vector
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector
+    for(int i = 0; i < my_M; ++i){
+        y[i]=1.0;
+    }
 
-     if (v == NULL || y == NULL) {
+    if (v == NULL || y == NULL) {
         fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
         fprintf(stderr, "v, y\n"); //debugging
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -202,7 +217,9 @@ int main(int argc, char *argv[]){
 
         GET_TIME(start);
         // 0 broadcasts the random vector
-        MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        // MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        // MPI_Allgatherv( const void* sendbuf , MPI_Count sendcount , MPI_Datatype sendtype , void* recvbuf , const MPI_Count recvcounts[] , const MPI_Aint displs[] , MPI_Datatype recvtype , MPI_Comm comm);
+        MPI_Allgatherv(y, my_M, MPI_DOUBLE, v, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
         GET_TIME(end);
 
         time_comm += (end-start);
@@ -238,11 +255,43 @@ int main(int argc, char *argv[]){
     MPI_Reduce(&avg_comm, &max_comm, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&avg_comp, &max_comp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    //flops
+    // flops
     double gflops = ( (2.0 * (double)NZ_global) / max_comp) / 1e9;
 
+    // memory footprint
+    long mem_bytes = 0;
+    mem_bytes += local_matrix.nz * sizeof(double);          // val
+    mem_bytes += local_matrix.nz * sizeof(int);             // col
+    mem_bytes += (my_M + 1) * sizeof(int);                  // row_ptr
+    mem_bytes += N_global * sizeof(double);                 // vector x 
+    mem_bytes += my_M * sizeof(double);                     // vector y 
+
+    double mem_mb = mem_bytes / (1024.0 * 1024.0);
+    double max_mem_mb = 0.0;
+
+    MPI_Reduce(&mem_mb, &max_mem_mb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    // NNZ per rank (min,max,avg)
+    int min_nz, max_nz, sum_nz;
+    MPI_Reduce(&my_nz, &min_nz, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&my_nz, &max_nz, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&my_nz, &sum_nz, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    // Communication volume per rank
+    long comm_volume_bytes = (N_global * sizeof(double)) - (my_M * sizeof(double)); // total vector size - my local part
+    long max_comm_volume;
+    MPI_Reduce(&comm_volume_bytes, &max_comm_volume, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+    double comm_mb_max = max_comm_volume / (1024.0 * 1024.0); //conversion to mb
+
+
     if (rank == 0) {
-        printf("Max_Comm: %f Max_Comp: %f GFLOPS: %f \n", max_comm, max_comp, gflops);
+        double avg_nz = (double)sum_nz / size;
+
+        printf("Max_Comm: %f Max_Comp: %f GFLOPS: %f Mem_MB: %f \n", max_comm, max_comp, gflops, max_mem_mb);
+        printf("NZ_Min: %d \n", min_nz);
+        printf("NZ_Max: %d \n", max_nz);
+        printf("NZ_Avg: %f \n", avg_nz);
+        printf("Comm_Volume_MB: %f ", comm_mb_max);
     }
 
     free(my_row_len);
@@ -251,6 +300,8 @@ int main(int argc, char *argv[]){
     free(my_row_pnt);
     free(v);
     free(y);
+    free(recvcounts_vec);
+    free(displs_vec);
     MPI_Finalize();
     return 0;
 }
