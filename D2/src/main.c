@@ -61,6 +61,7 @@ int main(int argc, char *argv[]){
     // MPI_Bcast( void* buffer , MPI_Count count , MPI_Datatype datatype , int root , MPI_Comm comm);
     MPI_Bcast(&M_global, 1, MPI_INT, 0, MPI_COMM_WORLD); 
     MPI_Bcast(&N_global, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&NZ_global, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     if(rank == 0){   
         
