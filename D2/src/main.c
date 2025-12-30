@@ -44,6 +44,7 @@ int main(int argc, char *argv[]){
 
     int M_global;
     int N_global;
+    int NZ_global;
 
     if(rank == 0){
         if (matrix_load_from_mtx(matrix_file, &matrix) != 0) {
@@ -53,6 +54,7 @@ int main(int argc, char *argv[]){
         }
         M_global = matrix.M;
         N_global = matrix.N;
+        NZ_global = matrix.nz;
     }
 
     // Broadcasting the matrix dimensions
@@ -193,7 +195,7 @@ int main(int argc, char *argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
-    int iterations = 1;
+    int iterations = 10;
 
     // SpMV implementation from D1
     for(int i=0; i<iterations; i++){
@@ -236,8 +238,11 @@ int main(int argc, char *argv[]){
     MPI_Reduce(&avg_comm, &max_comm, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&avg_comp, &max_comp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
+    //flops
+    double gflops = ( (2.0 * (double)NZ_global) / max_comp) / 1e9;
+
     if (rank == 0) {
-        printf("Max_Comm: %f Max_Comp: %f \n", max_comm, max_comp);
+        printf("Max_Comm: %f Max_Comp: %f GFLOPS: %f \n", max_comm, max_comp, gflops);
     }
 
     free(my_row_len);

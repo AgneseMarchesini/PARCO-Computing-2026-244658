@@ -37,7 +37,7 @@ mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-echo "Matrix,Processes,T_Comm,T_Comp" > $STRONG_SCALING_CSV
+echo "Matrix,Processes,T_Comm,T_Comp,GFLOPS" > $STRONG_SCALING_CSV
 
 for MATRIX_NAME in "${MATRICES[@]}"
 do
@@ -53,7 +53,9 @@ do
 
         TIME_COMP=$(echo $LINE | awk '{print $4}')
 
-        echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP" >> $STRONG_SCALING_CSV
+        GFLOPS=$(echo $LINE | awk '{print $6}')
+
+        echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$GFLOPS" >> $STRONG_SCALING_CSV
     done
 done
 
