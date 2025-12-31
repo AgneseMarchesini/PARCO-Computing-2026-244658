@@ -79,17 +79,18 @@ ax1.grid(True, which="both", ls="-", alpha=0.5)
 ax1.legend(plotted_matrices, title="Matrices")
 
 # Plot 2: Speedup
-ideal_x = ticks_x
-ax2.plot(ideal_x, ideal_x, 'k--', label='Ideal', linewidth=2)
+# ideal_x = ticks_x
+# ax2.plot(ideal_x, ideal_x, 'k--', label='Ideal', linewidth=2)
 
 ax2.set_title('Strong Scaling: Speedup', fontsize=14)
 ax2.set_xlabel('Number of Processes', fontsize=12)
 ax2.set_ylabel('Speedup (T1/Tp)', fontsize=12)
 ax2.set_xscale('log')
-ax2.set_xticks(ideal_x)
-ax2.set_xticklabels(ideal_x)
+ax2.set_xticks(ticks_x)
+ax2.set_xticklabels(ticks_x)
 ax2.grid(True, which="both", ls="-", alpha=0.5)
-ax2.legend(plotted_matrices + ['Ideal'], title="Matrices")
+# ax2.legend(plotted_matrices + ['Ideal'], title="Matrices")
+ax2.legend(plotted_matrices, title="Matrices")
 
 # Plot 3: Efficiency
 ax3.axhline(y=1.0, color='k', linestyle='--', label='Ideal (1.0)', linewidth=2)
@@ -98,8 +99,8 @@ ax3.set_title('Strong Scaling: Efficiency', fontsize=14)
 ax3.set_xlabel('Number of Processes', fontsize=12)
 ax3.set_ylabel('Efficiency (Speedup/P)', fontsize=12)
 ax3.set_xscale('log')
-ax3.set_xticks(ideal_x)
-ax3.set_xticklabels(ideal_x)
+ax3.set_xticks(ticks_x)
+ax3.set_xticklabels(ticks_x)
 ax3.set_ylim(0, 1.1) # Efficiency typically between 0 and 1
 ax3.grid(True, which="both", ls="-", alpha=0.5)
 ax3.legend(plotted_matrices + ['Ideal'], title="Matrices")

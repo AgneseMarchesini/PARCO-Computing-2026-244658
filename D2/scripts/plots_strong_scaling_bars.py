@@ -9,7 +9,7 @@ parent_dir = os.path.dirname(script_dir)
 
 INPUT_FILE = os.path.join(parent_dir, 'results', 'strong_scaling.csv') 
 OUTPUT_DIR = os.path.join(parent_dir, 'plots')
-OUTPUT_FILE = 'strong_scaling_breakdown_side_by_side.png'
+OUTPUT_FILE = 'strong_scaling_bars.png'
 
 # Matrix list
 MATRIX_ORDER = [

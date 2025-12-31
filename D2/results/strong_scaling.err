@@ -6,4 +6,3 @@ D2/src/mmio.c: In function ‘mm_typecode_to_str’:
 D2/src/mmio.c:460:9: warning: variable ‘error’ set but not used [-Wunused-but-set-variable]
   460 |     int error =0;
       |         ^~~~~
-=>> PBS: job killed: walltime 10835 exceeded limit 10800
