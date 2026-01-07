@@ -3,14 +3,7 @@
 #include "ghost_entries.h"
 
 static int owner_of(const GhostPattern *gp, int idx) {
-    int lo = 0, hi = gp->size - 1;
-    while (lo <= hi) {
-        int mid = (lo + hi) / 2;
-        if (idx < gp->row_start[mid]) hi = mid - 1;
-        else if (idx >= gp->row_end[mid]) lo = mid + 1;
-        else return mid;
-    }
-    return -1;
+    return idx % gp->size;
 }
 
 void ghost_build_ownership(GhostPattern *gp, int size, int rank, const int *recvcounts){
@@ -19,15 +12,13 @@ void ghost_build_ownership(GhostPattern *gp, int size, int rank, const int *recv
 
     gp->row_start = (int*) malloc(size * sizeof(int));
     gp->row_end   = (int*) malloc(size * sizeof(int));
-
-    gp->row_start[0] = 0;
-    for (int r = 1; r < size; r++) {
-        gp->row_start[r] = gp->row_start[r-1] + recvcounts[r-1];
-    }
+    
     for (int r = 0; r < size; r++) {
-        gp->row_end[r] = gp->row_start[r] + recvcounts[r];
+        gp->row_start[r] = 0;
+        gp->row_end[r]   = 0;
     }
 }
+
 
 void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
     int size = gp->size;
@@ -104,14 +95,13 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     int size = gp->size;
     int rank = gp->rank;
 
-    // Prepare send buffers for all neighbors
     double **send_bufs = (double**)calloc(size, sizeof(double*));
     for (int p = 0; p < size; p++) {
         if (gp->recv_count[p] > 0) {
             send_bufs[p] = (double*)malloc(gp->recv_count[p] * sizeof(double));
             for (int i = 0; i < gp->recv_count[p]; i++) {
                 int global_idx = gp->send_idx_to[p][i];
-                int local_idx = global_idx - gp->row_start[rank];
+                int local_idx = global_idx / size;
                 send_bufs[p][i] = x_local[local_idx];
             }
         }
@@ -119,28 +109,26 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
 
     for (int p = 0; p < size; p++) {
         if (p == rank) continue;
-        
         MPI_Sendrecv(
             send_bufs[p], gp->recv_count[p], MPI_DOUBLE, p, 456,
             gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456,
             comm, MPI_STATUS_IGNORE);
     }
 
-    // Free send buffers
-    for (int p = 0; p < size; p++) {
-        free(send_bufs[p]);
-    }
+    for (int p = 0; p < size; p++) free(send_bufs[p]);
     free(send_bufs);
 }
 
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
-    int owner = owner_of(gp, col);
-    if (owner == gp->rank || owner < 0) {
-        int local_idx = col - gp->row_start[gp->rank];
+    int owner = col % gp->size;  
+    
+    if (owner == gp->rank) {
+        int local_idx = col / gp->size;
         return x_local[local_idx];
     }
-
+    
+    // Ghost: lookup in ghost_x
     int base = gp->ghost_disp[owner];
     int len  = gp->need_count[owner];
     for (int i = 0; i < len; i++) {
@@ -148,9 +136,9 @@ double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
             return gp->ghost_x[base + i];
         }
     }
-
     return 0.0;
 }
+
 
 void ghost_free(GhostPattern *gp){
     if (!gp) return;

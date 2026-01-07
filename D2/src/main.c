@@ -340,7 +340,7 @@ int main(int argc, char *argv[]){
         printf("NZ_Min: %d \n", min_nz);
         printf("NZ_Max: %d \n", max_nz);
         printf("NZ_Avg: %f \n", avg_nz);
-        printf("Comm_Volume_MB: %f ", comm_mb_max);
+        printf("Comm_Volume_MB: %f \n", comm_mb_max);
     }
 
     if(use_ghost){
