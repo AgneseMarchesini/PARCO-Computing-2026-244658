@@ -67,9 +67,10 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
 
 void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
     int size = gp->size;
+    int rank = gp->rank;
 
     gp->recv_count = (int*) calloc(size, sizeof(int));
-
+    
     MPI_Alltoall(gp->need_count, 1, MPI_INT,
                  gp->recv_count, 1, MPI_INT, comm);
 
@@ -80,21 +81,15 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
         }
     }
 
-    MPI_Request *reqs = (MPI_Request*) malloc(2 * size * sizeof(MPI_Request));
-    int req_id = 0;
-
+    // FIXED: Use MPI_Sendrecv instead of Isend/Irecv
     for (int p = 0; p < size; p++) {
-        if (gp->need_count[p] > 0) {
-            MPI_Isend(gp->need_idx_from[p], gp->need_count[p], MPI_INT,
-                      p, 123, comm, &reqs[req_id++]);
-        }
-        if (gp->recv_count[p] > 0) {
-            MPI_Irecv(gp->send_idx_to[p], gp->recv_count[p], MPI_INT,
-                      p, 123, comm, &reqs[req_id++]);
-        }
+        if (p == rank) continue;
+        
+        MPI_Sendrecv(
+            gp->need_idx_from[p], gp->need_count[p], MPI_INT, p, 123,
+            gp->send_idx_to[p], gp->recv_count[p], MPI_INT, p, 123,
+            comm, MPI_STATUS_IGNORE);
     }
-    MPI_Waitall(req_id, reqs, MPI_STATUSES_IGNORE);
-    free(reqs);
 
     // Build ghost_disp and allocate ghost_x
     gp->ghost_disp = (int*) malloc(size * sizeof(int));
