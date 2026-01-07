@@ -29,5 +29,5 @@ void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v
 void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, double* y);
 
 // Multiplication with ghost entries
-void matrix_vector_mul_with_ghosts(const SparseMatrixCSR *matrix, const double *x, double *y, const GhostPattern *gp);
+void matrix_vector_mul_with_ghosts(const SparseMatrixCSR *matrix, const double *x, double *y, void *ghost_data);
 #endif
