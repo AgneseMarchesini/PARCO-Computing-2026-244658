@@ -200,9 +200,10 @@ int main(int argc, char *argv[]){
 
     double *v_local = (double*)malloc(my_M * sizeof(double)); // random dense vector
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector
-    for(int i = 0; i < my_M; ++i){
+    /* for(int i = 0; i < my_M; ++i){
         y[i]=1.0;
     }
+        */
 
     if (v_local == NULL || y == NULL) {
         fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
@@ -248,7 +249,7 @@ int main(int argc, char *argv[]){
                 MPI_Abort(MPI_COMM_WORLD, 1);
                 return 1;
             }
-            MPI_Allgatherv(y, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
+            MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
             GET_TIME(end);
             time_comm += (end - start);
 
