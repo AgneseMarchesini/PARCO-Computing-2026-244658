@@ -61,9 +61,7 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
     int rank = gp->rank;
 
     gp->recv_count = (int*) calloc(size, sizeof(int));
-    
-    MPI_Alltoall(gp->need_count, 1, MPI_INT,
-                 gp->recv_count, 1, MPI_INT, comm);
+    MPI_Alltoall(gp->need_count, 1, MPI_INT, gp->recv_count, 1, MPI_INT, comm);
 
     gp->send_idx_to = (int**) calloc(size, sizeof(int*));
     for (int p = 0; p < size; p++) {
@@ -72,16 +70,26 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
         }
     }
 
+    MPI_Request *reqs = (MPI_Request*) malloc(2 * size * sizeof(MPI_Request));
+    int req_id = 0;
+    
     for (int p = 0; p < size; p++) {
         if (p == rank) continue;
-        
-        MPI_Sendrecv(
-            gp->need_idx_from[p], gp->need_count[p], MPI_INT, p, 123,
-            gp->send_idx_to[p], gp->recv_count[p], MPI_INT, p, 123,
-            comm, MPI_STATUS_IGNORE);
+        if (gp->recv_count[p] > 0) {
+            MPI_Irecv(gp->send_idx_to[p], gp->recv_count[p], MPI_INT, p, 123, comm, &reqs[req_id++]);
+        }
     }
+    
+    for (int p = 0; p < size; p++) {
+        if (p == rank) continue;
+        if (gp->need_count[p] > 0) {
+            MPI_Isend(gp->need_idx_from[p], gp->need_count[p], MPI_INT, p, 123, comm, &reqs[req_id++]);
+        }
+    }
+    
+    MPI_Waitall(req_id, reqs, MPI_STATUSES_IGNORE);
+    free(reqs);
 
-    // Build ghost_disp and allocate ghost_x
     gp->ghost_disp = (int*) malloc(size * sizeof(int));
     int total_ghosts = 0;
     for (int p = 0; p < size; p++) {
@@ -107,18 +115,29 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
         }
     }
 
+    MPI_Request *reqs = (MPI_Request*) malloc(2 * size * sizeof(MPI_Request));
+    int req_id = 0;
+    
     for (int p = 0; p < size; p++) {
         if (p == rank) continue;
-        MPI_Sendrecv(
-            send_bufs[p], gp->recv_count[p], MPI_DOUBLE, p, 456,
-            gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456,
-            comm, MPI_STATUS_IGNORE);
+        if (gp->need_count[p] > 0) {
+            MPI_Irecv(gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456, comm, &reqs[req_id++]);
+        }
     }
+    
+    for (int p = 0; p < size; p++) {
+        if (p == rank) continue;
+        if (gp->recv_count[p] > 0) {
+            MPI_Isend(send_bufs[p], gp->recv_count[p], MPI_DOUBLE, p, 456, comm, &reqs[req_id++]);
+        }
+    }
+    
+    MPI_Waitall(req_id, reqs, MPI_STATUSES_IGNORE);
+    free(reqs);
 
     for (int p = 0; p < size; p++) free(send_bufs[p]);
     free(send_bufs);
 }
-
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
     int owner = col % gp->size;  
@@ -127,8 +146,7 @@ double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
         int local_idx = col / gp->size;
         return x_local[local_idx];
     }
-    
-    // Ghost: lookup in ghost_x
+
     int base = gp->ghost_disp[owner];
     int len  = gp->need_count[owner];
     for (int i = 0; i < len; i++) {
