@@ -133,8 +133,6 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     }
 }
 
-}
-
 
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
