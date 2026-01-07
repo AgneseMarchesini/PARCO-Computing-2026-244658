@@ -260,6 +260,11 @@ int main(int argc, char *argv[]){
                 }
             }
 
+            //debug
+            if (i == 0 && rank == 0) {
+                printf("Mode 0: v_full[0]=%f v_full[1]=%f v_full[100000]=%f\n", v_full[0], v_full[1], v_full[100000]);
+            }
+
             GET_TIME(end);
             time_comm += (end - start);
 
@@ -279,6 +284,10 @@ int main(int argc, char *argv[]){
             time_comm += (end - start);
 
             GET_TIME(start);
+            //debug 
+            if (i == 0 && rank == 0) {
+                printf("Mode 1: v_local[0]=%f v_local[1]=%f v_local[25000]=%f\n", v_local[0], v_local[1], v_local[25000]);
+            }
             for (int row = 0; row < my_M; row++) {
 
                 //debug
