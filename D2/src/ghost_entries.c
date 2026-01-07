@@ -128,6 +128,9 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     int size = gp->size;
     int rank = gp->rank;
 
+    //Debug
+    printf("[Rank %d] ghost_exchange_values START\n", rank); fflush(stdout);
+
     // Compute displacements
     int *send_displs = (int*)malloc(size * sizeof(int));
     int *recv_displs = (int*)malloc(size * sizeof(int));
@@ -156,6 +159,10 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     free(send_buf);
     free(send_displs);
     free(recv_displs);
+
+    //debug
+    printf("[Rank %d] ghost_exchange_values END\n", rank); fflush(stdout);
+
 }
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
