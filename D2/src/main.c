@@ -271,7 +271,7 @@ int main(int argc, char *argv[]){
             for (int row = 0; row < my_M; row++) {
 
                 //debug
-                printf("[Rank %d] Before inline SpMV\n", rank); fflush(stdout);
+                //printf("[Rank %d] Before inline SpMV\n", rank); fflush(stdout);
                 double sum = 0.0;
                 int start_idx = my_row_pnt[row];
                 int end_idx   = my_row_pnt[row + 1];
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]){
                 }
                 y[row] = sum;
                 //debug
-                printf("[Rank %d] After inline SpMV\n", rank); fflush(stdout);
+                //printf("[Rank %d] After inline SpMV\n", rank); fflush(stdout);
             }
             GET_TIME(end);
             time_comp += (end - start);
