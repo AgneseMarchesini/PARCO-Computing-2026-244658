@@ -110,39 +110,29 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     int size = gp->size;
     int rank = gp->rank;
 
-    double **send_vals_to = (double**) calloc(size, sizeof(double*));
+    // Send to each neighbor, receive from each neighbor
     for (int p = 0; p < size; p++) {
-        if (gp->recv_count[p] > 0) {
-            send_vals_to[p] = (double*) malloc(gp->recv_count[p] * sizeof(double));
-            for (int i = 0; i < gp->recv_count[p]; i++) {
-                int global_idx = gp->send_idx_to[p][i];  // global index requested by p
-                int local_idx = global_idx - gp->row_start[rank];  // local in v_local
-                send_vals_to[p][i] = x_local[local_idx];
-            }
-        }
-    }
+        if (p == rank) continue;
 
-    MPI_Request *reqs = (MPI_Request*) malloc(2 * size * sizeof(MPI_Request));
-    int req_id = 0;
-
-    for (int p = 0; p < size; p++) {
         if (gp->need_count[p] > 0) {
-            MPI_Irecv(gp->ghost_x + gp->ghost_disp[p],
-                      gp->need_count[p], MPI_DOUBLE,
-                      p, 456, comm, &reqs[req_id++]);
+            // Receive ghosts from p
+            MPI_Recv(gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456, comm, MPI_STATUS_IGNORE);
         }
-        if (gp->recv_count[p] > 0) {
-            MPI_Isend(send_vals_to[p], gp->recv_count[p], MPI_DOUBLE,
-                      p, 456, comm, &reqs[req_id++]);
-        }
-    }
-    MPI_Waitall(req_id, reqs, MPI_STATUSES_IGNORE);
-    free(reqs);
 
-    for (int p = 0; p < size; p++) {
-        free(send_vals_to[p]);
+        if (gp->recv_count[p] > 0) {
+            // Send owned values to p
+            double *send_buf = (double*)malloc(gp->recv_count[p] * sizeof(double));
+            for (int i = 0; i < gp->recv_count[p]; i++) {
+                int global_idx = gp->send_idx_to[p][i];
+                int local_idx = global_idx - gp->row_start[rank];
+                send_buf[i] = x_local[local_idx];
+            }
+            MPI_Send(send_buf, gp->recv_count[p], MPI_DOUBLE, p, 456, comm);
+            free(send_buf);
+        }
     }
-    free(send_vals_to);
+}
+
 }
 
 
