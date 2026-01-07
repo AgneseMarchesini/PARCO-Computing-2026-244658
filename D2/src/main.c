@@ -227,7 +227,7 @@ int main(int argc, char *argv[]){
     if(use_ghost){
         ghost_build_ownership(&gp, size, rank, recvcounts_vec);
         ghost_build_pattern(&gp, &local_matrix);
-        ghost_exchange_index_lists(&gp, MPI_COMM_WORLD);
+        ghost_exchange_index_lists(&gp, N_global, MPI_COMM_WORLD);
     }
     
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time

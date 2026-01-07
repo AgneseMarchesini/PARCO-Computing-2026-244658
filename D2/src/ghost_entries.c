@@ -65,7 +65,7 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
     free(capacity);
 }
 
-void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
+void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
     //debug
     printf("[Rank %d] ghost_exchange_index_lists START\n", gp->rank); fflush(stdout);
 
@@ -120,6 +120,18 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
     }
     gp->ghost_x = (double*) malloc(total_ghosts * sizeof(double));
 
+    gp->col_to_ghost = (int*) malloc(N_global * sizeof(int));
+    for (int i = 0; i < N_global; i++) {
+        gp->col_to_ghost[i] = -1; 
+    }
+
+    for (int p = 0; p < size; p++) {
+        for (int i = 0; i < gp->need_count[p]; i++) {
+            int col = gp->need_idx_from[p][i];
+            gp->col_to_ghost[col] = gp->ghost_disp[p] + i;
+        }
+    }
+
     //debug
     printf("[Rank %d] ghost_exchange_index_lists END\n", gp->rank); fflush(stdout);
 }
@@ -166,21 +178,14 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
 }
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
-    int owner = col % gp->size;  
+    int owner = col % gp->size;
     
     if (owner == gp->rank) {
-        int local_idx = col / gp->size;
-        return x_local[local_idx];
+        return x_local[col / gp->size];
     }
-
-    int base = gp->ghost_disp[owner];
-    int len  = gp->need_count[owner];
-    for (int i = 0; i < len; i++) {
-        if (gp->need_idx_from[owner][i] == col) {
-            return gp->ghost_x[base + i];
-        }
-    }
-    return 0.0;
+    
+    int ghost_pos = gp->col_to_ghost[col];
+    return gp->ghost_x[ghost_pos];
 }
 
 
@@ -192,6 +197,7 @@ void ghost_free(GhostPattern *gp){
         free(gp->send_idx_to  ? gp->send_idx_to[p]   : NULL);
     }
 
+    free(gp->col_to_ghost);
     free(gp->need_idx_from);
     free(gp->send_idx_to);
     free(gp->need_count);

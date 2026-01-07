@@ -22,6 +22,8 @@ typedef struct {
     int  *ghost_disp; // displacement into ghost_x for each p
     double *ghost_x; // concatenated ghost values
 
+    int *col_to_ghost;
+
 } GhostPattern;
 
 // Build ownership ranges (row_start/row_end)
@@ -33,7 +35,7 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix);
 
 
 // Exchange index lists with neighbors so that each rank knows which entries of x it must send.
-void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm);
+void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm);
 
 
 // For a given input vector x  exchange the ghost values according to the pre-built pattern.
