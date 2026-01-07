@@ -243,11 +243,12 @@ int main(int argc, char *argv[]){
         // MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         // MPI_Allgatherv( const void* sendbuf , MPI_Count sendcount , MPI_Datatype sendtype , void* recvbuf , const MPI_Count recvcounts[] , const MPI_Aint displs[] , MPI_Datatype recvtype , MPI_Comm comm);
 
+        double *v_full = NULL;
         if(use_ghost){
             ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
         }
         else{ // repeated vector
-            double *v_full = (double*)malloc(N_global * sizeof(double));
+            *v_full = (double*)malloc(N_global * sizeof(double));
             if (v_full==NULL) {
                 fprintf(stderr, "Malloc failed (v_full).\n");
                 MPI_Abort(MPI_COMM_WORLD, 1);
