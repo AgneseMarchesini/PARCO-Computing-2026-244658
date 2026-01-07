@@ -24,6 +24,9 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
     int size = gp->size;
     int rank = gp->rank;
 
+    //debug
+    printf("[Rank %d] ghost_build_pattern START\n", rank); fflush(stdout);
+
     gp->need_idx_from = (int**) calloc(size, sizeof(int*));
     gp->need_count    = (int*)  calloc(size, sizeof(int));
     int *capacity     = (int*)  calloc(size, sizeof(int));
@@ -53,10 +56,19 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
         }
     }
 
+
+//debug
+    printf("[Rank %d] ghost_build_pattern END: needs ", rank);
+    for(int p=0; p<size; p++) printf("%d ", gp->need_count[p]);
+    printf("\n"); fflush(stdout);
+
     free(capacity);
 }
 
 void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
+    //debug
+    printf("[Rank %d] ghost_exchange_index_lists START\n", gp->rank); fflush(stdout);
+
     int size = gp->size;
     int rank = gp->rank;
 
@@ -107,6 +119,9 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
         total_ghosts += gp->need_count[p];
     }
     gp->ghost_x = (double*) malloc(total_ghosts * sizeof(double));
+
+    //debug
+    printf("[Rank %d] ghost_exchange_index_lists END\n", gp->rank); fflush(stdout);
 }
 
 void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm){
