@@ -250,7 +250,7 @@ int main(int argc, char *argv[]){
                 MPI_Abort(MPI_COMM_WORLD, 1);
                 return 1;
             }
-            MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
+            MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_gathered, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
 
             //debug
             if (i == 0 && rank == 0) {
