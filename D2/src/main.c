@@ -213,7 +213,8 @@ int main(int argc, char *argv[]){
     }
 
     // Initialize LOCAL chunk of v randomly on each rank
-    srand((unsigned int)(time(NULL) + rank * 12345));  // different seed per rank
+    srand(42 + rank*12345); //FIXED SEED TO SEE IF THE DEBUG CHECKSUM IS CORRECT
+    //srand((unsigned int)(time(NULL) + rank * 12345));  // different seed per rank
     for (int i = 0; i < my_M; i++) {
         v_local[i] = (double)(rand() % 10);
     }
