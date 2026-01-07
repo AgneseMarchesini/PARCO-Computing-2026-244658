@@ -133,6 +133,7 @@ void matrix_free(SparseMatrixCSR* matrix) {
 void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v, double* y) {
     int i, j;
     for (i = 0; i < matrix->M; i++) {
+        y[i]=0.0;
         int start_index = matrix->row_pnt[i];
         int end_index = matrix->row_pnt[i + 1];
 
