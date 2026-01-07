@@ -250,6 +250,15 @@ int main(int argc, char *argv[]){
                 return 1;
             }
             MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
+
+            // Permute from rank-order to global-order (cyclic unpacking)
+            for (int r = 0; r < size; r++) {
+                for (int i = 0; i < recvcounts_vec[r]; i++) {
+                    int global_idx = r + i * size;  
+                    v_full[global_idx] = v_gathered[displs_vec[r] + i];
+                }
+            }
+
             GET_TIME(end);
             time_comm += (end - start);
 
