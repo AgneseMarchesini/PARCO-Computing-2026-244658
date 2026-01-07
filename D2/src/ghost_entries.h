@@ -37,7 +37,7 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm);
 
 
 // For a given input vector x  exchange the ghost values according to the pre-built pattern.
-void ghost_exchange_values(GhostPattern *gp, const double *x, MPI_Comm comm);
+void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm);
 
 
 // Get value x[col], either local or ghost, using the pattern.

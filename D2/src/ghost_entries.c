@@ -147,7 +147,7 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
 
 
 
-double ghost_get_x(const GhostPattern *gp, const double *x, int col){
+double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
     int owner = owner_of(gp, col);
     if (owner == gp->rank || owner < 0) {
         int local_idx = col - gp->row_start[gp->rank];
