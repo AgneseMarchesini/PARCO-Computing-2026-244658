@@ -63,32 +63,42 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
     gp->recv_count = (int*) calloc(size, sizeof(int));
     MPI_Alltoall(gp->need_count, 1, MPI_INT, gp->recv_count, 1, MPI_INT, comm);
 
+    // Compute send/recv displacements for Alltoallv
+    int *send_displs = (int*)malloc(size * sizeof(int));
+    int *recv_displs = (int*)malloc(size * sizeof(int));
+    send_displs[0] = 0;
+    recv_displs[0] = 0;
+    for (int p = 1; p < size; p++) {
+        send_displs[p] = send_displs[p-1] + gp->need_count[p-1];
+        recv_displs[p] = recv_displs[p-1] + gp->recv_count[p-1];
+    }
+
+    // Pack all send data contiguously
+    int total_send = send_displs[size-1] + gp->need_count[size-1];
+    int total_recv = recv_displs[size-1] + gp->recv_count[size-1];
+    int *send_buf = (int*)malloc(total_send * sizeof(int));
+    int *recv_buf = (int*)malloc(total_recv * sizeof(int));
+
+    for (int p = 0; p < size; p++) {
+        memcpy(send_buf + send_displs[p], gp->need_idx_from[p], gp->need_count[p] * sizeof(int));
+    }
+
+    // Single Alltoallv exchange
+    MPI_Alltoallv(send_buf, gp->need_count, send_displs, MPI_INT, recv_buf, gp->recv_count, recv_displs, MPI_INT, comm);
+
+    // Unpack received data
     gp->send_idx_to = (int**) calloc(size, sizeof(int*));
     for (int p = 0; p < size; p++) {
         if (gp->recv_count[p] > 0) {
             gp->send_idx_to[p] = (int*) malloc(gp->recv_count[p] * sizeof(int));
+            memcpy(gp->send_idx_to[p], recv_buf + recv_displs[p], gp->recv_count[p] * sizeof(int));
         }
     }
 
-    MPI_Request *reqs = (MPI_Request*) malloc(2 * size * sizeof(MPI_Request));
-    int req_id = 0;
-    
-    for (int p = 0; p < size; p++) {
-        if (p == rank) continue;
-        if (gp->recv_count[p] > 0) {
-            MPI_Irecv(gp->send_idx_to[p], gp->recv_count[p], MPI_INT, p, 123, comm, &reqs[req_id++]);
-        }
-    }
-    
-    for (int p = 0; p < size; p++) {
-        if (p == rank) continue;
-        if (gp->need_count[p] > 0) {
-            MPI_Isend(gp->need_idx_from[p], gp->need_count[p], MPI_INT, p, 123, comm, &reqs[req_id++]);
-        }
-    }
-    
-    MPI_Waitall(req_id, reqs, MPI_STATUSES_IGNORE);
-    free(reqs);
+    free(send_buf);
+    free(recv_buf);
+    free(send_displs);
+    free(recv_displs);
 
     gp->ghost_disp = (int*) malloc(size * sizeof(int));
     int total_ghosts = 0;
@@ -103,40 +113,34 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     int size = gp->size;
     int rank = gp->rank;
 
-    double **send_bufs = (double**)calloc(size, sizeof(double*));
+    // Compute displacements
+    int *send_displs = (int*)malloc(size * sizeof(int));
+    int *recv_displs = (int*)malloc(size * sizeof(int));
+    send_displs[0] = 0;
+    recv_displs[0] = 0;
+    for (int p = 1; p < size; p++) {
+        send_displs[p] = send_displs[p-1] + gp->recv_count[p-1];
+        recv_displs[p] = recv_displs[p-1] + gp->need_count[p-1];
+    }
+
+    // Pack send data
+    int total_send = send_displs[size-1] + gp->recv_count[size-1];
+    double *send_buf = (double*)malloc(total_send * sizeof(double));
+
     for (int p = 0; p < size; p++) {
-        if (gp->recv_count[p] > 0) {
-            send_bufs[p] = (double*)malloc(gp->recv_count[p] * sizeof(double));
-            for (int i = 0; i < gp->recv_count[p]; i++) {
-                int global_idx = gp->send_idx_to[p][i];
-                int local_idx = global_idx / size;
-                send_bufs[p][i] = x_local[local_idx];
-            }
+        for (int i = 0; i < gp->recv_count[p]; i++) {
+            int global_idx = gp->send_idx_to[p][i];
+            int local_idx = global_idx / size;
+            send_buf[send_displs[p] + i] = x_local[local_idx];
         }
     }
 
-    MPI_Request *reqs = (MPI_Request*) malloc(2 * size * sizeof(MPI_Request));
-    int req_id = 0;
-    
-    for (int p = 0; p < size; p++) {
-        if (p == rank) continue;
-        if (gp->need_count[p] > 0) {
-            MPI_Irecv(gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456, comm, &reqs[req_id++]);
-        }
-    }
-    
-    for (int p = 0; p < size; p++) {
-        if (p == rank) continue;
-        if (gp->recv_count[p] > 0) {
-            MPI_Isend(send_bufs[p], gp->recv_count[p], MPI_DOUBLE, p, 456, comm, &reqs[req_id++]);
-        }
-    }
-    
-    MPI_Waitall(req_id, reqs, MPI_STATUSES_IGNORE);
-    free(reqs);
+    // Single Alltoallv exchange
+    MPI_Alltoallv(send_buf, gp->recv_count, send_displs, MPI_DOUBLE, gp->ghost_x, gp->need_count, gp->ghost_disp, MPI_DOUBLE, comm);
 
-    for (int p = 0; p < size; p++) free(send_bufs[p]);
-    free(send_bufs);
+    free(send_buf);
+    free(send_displs);
+    free(recv_displs);
 }
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
