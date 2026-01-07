@@ -81,7 +81,6 @@ void ghost_exchange_index_lists(GhostPattern *gp, MPI_Comm comm){
         }
     }
 
-    // FIXED: Use MPI_Sendrecv instead of Isend/Irecv
     for (int p = 0; p < size; p++) {
         if (p == rank) continue;
         
@@ -105,29 +104,34 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     int size = gp->size;
     int rank = gp->rank;
 
-    // Send to each neighbor, receive from each neighbor
+    // Prepare send buffers for all neighbors
+    double **send_bufs = (double**)calloc(size, sizeof(double*));
     for (int p = 0; p < size; p++) {
-        if (p == rank) continue;
-
-        if (gp->need_count[p] > 0) {
-            // Receive ghosts from p
-            MPI_Recv(gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456, comm, MPI_STATUS_IGNORE);
-        }
-
         if (gp->recv_count[p] > 0) {
-            // Send owned values to p
-            double *send_buf = (double*)malloc(gp->recv_count[p] * sizeof(double));
+            send_bufs[p] = (double*)malloc(gp->recv_count[p] * sizeof(double));
             for (int i = 0; i < gp->recv_count[p]; i++) {
                 int global_idx = gp->send_idx_to[p][i];
                 int local_idx = global_idx - gp->row_start[rank];
-                send_buf[i] = x_local[local_idx];
+                send_bufs[p][i] = x_local[local_idx];
             }
-            MPI_Send(send_buf, gp->recv_count[p], MPI_DOUBLE, p, 456, comm);
-            free(send_buf);
         }
     }
-}
 
+    for (int p = 0; p < size; p++) {
+        if (p == rank) continue;
+        
+        MPI_Sendrecv(
+            send_bufs[p], gp->recv_count[p], MPI_DOUBLE, p, 456,
+            gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 456,
+            comm, MPI_STATUS_IGNORE);
+    }
+
+    // Free send buffers
+    for (int p = 0; p < size; p++) {
+        free(send_bufs[p]);
+    }
+    free(send_bufs);
+}
 
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
