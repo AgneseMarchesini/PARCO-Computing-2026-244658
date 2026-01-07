@@ -3,6 +3,7 @@
 #include <time.h>
 #include "mmio.h"
 #include "matrix.h"
+#include "ghost_entries.h"
 #include <string.h>
 
 // Temporary container for (row, column, value) triplet
@@ -151,5 +152,20 @@ void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, 
         for (j = start_index; j < end_index; j++) {
             y[i] += matrix->val_pnt[j] * v[matrix->col_pnt[j]];
         }
+    }
+}
+
+
+void matrix_vector_mul_with_ghosts(const SparseMatrixCSR *matrix, const double *x, double *y, const GhostPattern *gp){
+    for (int i = 0; i < matrix->M; i++) {
+        double sum = 0.0;
+        int start = matrix->row_pnt[i];
+        int end   = matrix->row_pnt[i + 1];
+        for (int j = start; j < end; j++) {
+            int col = matrix->col_pnt[j];
+            double xval = ghost_get_x(gp, x, col);
+            sum += matrix->val_pnt[j] * xval;
+        }
+        y[i] = sum;
     }
 }

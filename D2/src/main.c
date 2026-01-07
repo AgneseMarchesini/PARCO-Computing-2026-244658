@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "mmio.h"
 #include "matrix.h"
+#include "ghost_entries.h"
+#include "distvec.h"
 #include "timer.h"
 #include <mpi.h>
 #include <time.h>
@@ -26,12 +29,31 @@ int main(int argc, char *argv[]){
     }
     */
 
-    if(argc != 2){
-        printf("Usage: ");
+    if(argc != 3){
+        if (rank == 0) {
+            printf("Usage: %s <matrix_file> <mode>\n", argv[0]);
+            printf("Mode 0 = replicated vector\n");
+            printf("Mode 1 = ghost entries\n");
+        }
+        MPI_Finalize();
         return 1;
     }
 
     char* matrix_file = argv[1];
+    int mode = atoi(argv[2]); // 0 or 1
+    if(mode != 0 && mode != 1){
+        if(rank == 0){
+            fprintf(stderr, "ERROR: mode must be 0 or 1 \n");
+        }
+        MPI_Finalize();
+        return 1;
+    }
+
+    bool use_ghost;
+    if(mode == 1){
+        use_ghost = true;
+    } else use_ghost = false;
+
     SparseMatrixCSR matrix;
 
     // Variables for local partition
@@ -174,41 +196,41 @@ int main(int argc, char *argv[]){
 
     int *recvcounts_vec = (int *)malloc(size * sizeof(int));
     int *displs_vec = (int *)malloc(size * sizeof(int));
+    dist_build_counts_displs(size, my_M, recvcounts_vec, displs_vec, MPI_COMM_WORLD);
 
-    // every rank sends its my_M to everyone else
-    MPI_Allgather(&my_M, 1, MPI_INT, recvcounts_vec, 1, MPI_INT, MPI_COMM_WORLD);
-
-    // calculate displacements (where each rank's chunk starts in the global vector)
-    displs_vec[0] = 0;
-    for (int i = 1; i < size; i++) {
-        displs_vec[i] = displs_vec[i-1] + recvcounts_vec[i-1];
-    }
-
-    double *v = (double*)malloc(N_global * sizeof(double)); // random dense vector
+    double *v_local = (double*)malloc(my_M * sizeof(double)); // random dense vector
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector
     for(int i = 0; i < my_M; ++i){
         y[i]=1.0;
     }
 
-    if (v == NULL || y == NULL) {
+    if (v_local == NULL || y == NULL) {
         fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
         fprintf(stderr, "v, y\n"); //debugging
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
 
-    if (rank == 0){ 
-        srand((unsigned int)time(NULL));
-        for(int i = 0; i < N_global; ++i){
-            v[i] = (double) (rand() % 10);
-            //v[i] = 1.0; // for debugging
-        }
+    // Initialize LOCAL chunk of v randomly on each rank
+    srand((unsigned int)(time(NULL) + rank * 12345));  // different seed per rank
+    int my_v_start = displs_vec[rank];
+    for (int i = 0; i < my_M; i++) {
+        v_local[i] = (double)(rand() % 10);
     }
+
 
     // Multiplication
     SparseMatrixCSR local_matrix;
     matrix_init(&local_matrix, my_M, N_global, my_nz, my_row_pnt, my_cols, my_vals);
 
+    // Build ghost pattern 
+    GhostPattern gp;
+    if(use_ghost){
+        ghost_build_ownership(&gp, size, rank, recvcounts_vec);
+        ghost_build_pattern(&gp, &local_matrix);
+        ghost_exchange_index_lists(&gp, MPI_COMM_WORLD);
+    }
+    
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
     int iterations = 10;
@@ -220,14 +242,33 @@ int main(int argc, char *argv[]){
         // 0 broadcasts the random vector
         // MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         // MPI_Allgatherv( const void* sendbuf , MPI_Count sendcount , MPI_Datatype sendtype , void* recvbuf , const MPI_Count recvcounts[] , const MPI_Aint displs[] , MPI_Datatype recvtype , MPI_Comm comm);
-        MPI_Allgatherv(y, my_M, MPI_DOUBLE, v, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
+
+        if(use_ghost){
+            ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
+        }
+        else{ // repeated vector
+            double *v_full = (double*)malloc(N_global * sizeof(double));
+            if (v_full==NULL) {
+                fprintf(stderr, "Malloc failed (v_full).\n");
+                MPI_Abort(MPI_COMM_WORLD, 1);
+            }
+            MPI_Allgatherv(y, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
+        }
+
         GET_TIME(end);
 
         time_comm += (end-start);
 
         GET_TIME(start);
-        matrix_vector_mul_sequential(&local_matrix, v, y);
+        if(use_ghost){
+            matrix_vector_mul_with_ghosts(&local_matrix, v_local, y, &gp);
+        } 
+        else{ // repeated vector
+            matrix_vector_mul_sequential(&local_matrix, v_full, y);
+            free(v_full);
+        }
         GET_TIME(end);
+
 
         time_comp += (end-start);
     }
@@ -264,7 +305,7 @@ int main(int argc, char *argv[]){
     mem_bytes += local_matrix.nz * sizeof(double);          // val
     mem_bytes += local_matrix.nz * sizeof(int);             // col
     mem_bytes += (my_M + 1) * sizeof(int);                  // row_ptr
-    mem_bytes += N_global * sizeof(double);                 // vector x 
+    mem_bytes += (use_ghost ? my_M : N_global) * sizeof(double); // vector x 
     mem_bytes += my_M * sizeof(double);                     // vector y 
 
     double mem_mb = mem_bytes / (1024.0 * 1024.0);
@@ -295,11 +336,14 @@ int main(int argc, char *argv[]){
         printf("Comm_Volume_MB: %f ", comm_mb_max);
     }
 
+    if(use_ghost){
+        ghost_free(&gp);
+    }
     free(my_row_len);
     free(my_cols);
     free(my_vals);
     free(my_row_pnt);
-    free(v);
+    free(v_local);
     free(y);
     free(recvcounts_vec);
     free(displs_vec);

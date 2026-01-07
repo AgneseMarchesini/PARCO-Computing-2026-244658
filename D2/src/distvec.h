@@ -1,0 +1,9 @@
+#ifndef DISTVEC_H
+#define DISTVEC_H
+
+#include <mpi.h>
+
+/// Build recvcounts and displs for a distributed vector
+void dist_build_counts_displs(int size, int my_M, int *recvcounts, int *displs, MPI_Comm comm);
+
+#endif
