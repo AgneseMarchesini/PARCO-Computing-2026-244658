@@ -25,7 +25,7 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
     int rank = gp->rank;
 
     //debug
-    printf("[Rank %d] ghost_build_pattern START\n", rank); fflush(stdout);
+    //printf("[Rank %d] ghost_build_pattern START\n", rank); fflush(stdout);
 
     gp->need_idx_from = (int**) calloc(size, sizeof(int*));
     gp->need_count    = (int*)  calloc(size, sizeof(int));
@@ -58,16 +58,17 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
 
 
 //debug
+/*
     printf("[Rank %d] ghost_build_pattern END: needs ", rank);
     for(int p=0; p<size; p++) printf("%d ", gp->need_count[p]);
     printf("\n"); fflush(stdout);
-
+*/
     free(capacity);
 }
 
 void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
     //debug
-    printf("[Rank %d] ghost_exchange_index_lists START\n", gp->rank); fflush(stdout);
+   // printf("[Rank %d] ghost_exchange_index_lists START\n", gp->rank); fflush(stdout);
 
     int size = gp->size;
     int rank = gp->rank;
@@ -133,7 +134,7 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
     }
 
     //debug
-    printf("[Rank %d] ghost_exchange_index_lists END\n", gp->rank); fflush(stdout);
+//    printf("[Rank %d] ghost_exchange_index_lists END\n", gp->rank); fflush(stdout);
 }
 
 void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm){
@@ -141,7 +142,7 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     int rank = gp->rank;
 
     //Debug
-    printf("[Rank %d] ghost_exchange_values START\n", rank); fflush(stdout);
+//    printf("[Rank %d] ghost_exchange_values START\n", rank); fflush(stdout);
 
     // Compute displacements
     int *send_displs = (int*)malloc(size * sizeof(int));
@@ -173,7 +174,7 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
     free(recv_displs);
 
     //debug
-    printf("[Rank %d] ghost_exchange_values END\n", rank); fflush(stdout);
+//    printf("[Rank %d] ghost_exchange_values END\n", rank); fflush(stdout);
 
 }
 

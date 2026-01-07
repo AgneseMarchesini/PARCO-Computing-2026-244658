@@ -238,12 +238,13 @@ int main(int argc, char *argv[]){
     for(int i=0; i<iterations; i++){
 
         //debug
-        if(rank == 0) printf("\n=== Iteration %d START ===\n", i); fflush(stdout);
+        //if(rank == 0) printf("\n=== Iteration %d START ===\n", i); fflush(stdout);
 
         GET_TIME(start);
         if(!use_ghost){ 
+            double *v_gathered = (double*)malloc(N_global * sizeof(double));
             double *v_full = (double*)malloc(N_global * sizeof(double));
-            if (!v_full) { 
+            if (v_full == NULL || v_gathered == NULL) { 
                 fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
                 fprintf(stderr, "v_full\n"); //debugging
                 MPI_Abort(MPI_COMM_WORLD, 1);
@@ -270,10 +271,10 @@ int main(int argc, char *argv[]){
             free(v_full);
         } else {
             //debug
-            printf("[Rank %d] Before ghost_exchange_values\n", rank); fflush(stdout);
+            //printf("[Rank %d] Before ghost_exchange_values\n", rank); fflush(stdout);
             ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
             //debug
-            printf("[Rank %d] After ghost_exchange_values\n", rank); fflush(stdout);
+            //printf("[Rank %d] After ghost_exchange_values\n", rank); fflush(stdout);
             GET_TIME(end);
             time_comm += (end - start);
 
@@ -301,7 +302,7 @@ int main(int argc, char *argv[]){
 
         time_comp += (end-start);
         //debug
-        if(rank == 0) printf("=== Iteration %d END ===\n", i); fflush(stdout);
+        //if(rank == 0) printf("=== Iteration %d END ===\n", i); fflush(stdout);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
