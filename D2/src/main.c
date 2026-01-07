@@ -206,7 +206,7 @@ int main(int argc, char *argv[]){
 
     if (v_local == NULL || y == NULL) {
         fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
-        fprintf(stderr, "v, y\n"); //debugging
+        fprintf(stderr, "v_local, y\n"); //debugging
         MPI_Abort(MPI_COMM_WORLD, 1);
         return 1;
     }
@@ -235,40 +235,47 @@ int main(int argc, char *argv[]){
 
     int iterations = 10;
 
-    // SpMV implementation from D1
     for(int i=0; i<iterations; i++){
 
         GET_TIME(start);
-        // 0 broadcasts the random vector
-        // MPI_Bcast(v, N_global, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        // MPI_Allgatherv( const void* sendbuf , MPI_Count sendcount , MPI_Datatype sendtype , void* recvbuf , const MPI_Count recvcounts[] , const MPI_Aint displs[] , MPI_Datatype recvtype , MPI_Comm comm);
-
-        double *v_full = NULL;
-        if(use_ghost){
-            ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
-        }
-        else{ // repeated vector
-            *v_full = (double*)malloc(N_global * sizeof(double));
-            if (v_full==NULL) {
-                fprintf(stderr, "Malloc failed (v_full).\n");
+        if(!use_ghost){ 
+            double *v_full = (double*)malloc(N_global * sizeof(double));
+            if (!v_full) { 
+                fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
+                fprintf(stderr, "v_full\n"); //debugging
                 MPI_Abort(MPI_COMM_WORLD, 1);
+                return 1;
             }
             MPI_Allgatherv(y, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
-        }
+            GET_TIME(end);
+            time_comm += (end - start);
 
-        GET_TIME(end);
-
-        time_comm += (end-start);
-
-        GET_TIME(start);
-        if(use_ghost){
-            matrix_vector_mul_with_ghosts(&local_matrix, v_local, y, &gp);
-        } 
-        else{ // repeated vector
+            // Computation phase
+            GET_TIME(start);
             matrix_vector_mul_sequential(&local_matrix, v_full, y);
+            GET_TIME(end);
+            time_comp += (end - start);
             free(v_full);
+        } else {
+            ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
+            GET_TIME(end);
+            time_comm += (end - start);
+
+            GET_TIME(start);
+            for (int row = 0; row < my_M; row++) {
+                double sum = 0.0;
+                int start_idx = my_row_pnt[row];
+                int end_idx   = my_row_pnt[row + 1];
+                for (int k = start_idx; k < end_idx; k++) {
+                    int col = my_cols[k];
+                    double xval = ghost_get_x(&gp, v_local, col);
+                    sum += my_vals[k] * xval;
+                }
+                y[row] = sum;
+            }
+            GET_TIME(end);
+            time_comp += (end - start);
         }
-        GET_TIME(end);
 
 
         time_comp += (end-start);

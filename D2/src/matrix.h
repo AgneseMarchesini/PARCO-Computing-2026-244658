@@ -28,8 +28,4 @@ void matrix_vector_mul_sequential(const SparseMatrixCSR* matrix, const double* v
 // Multiply the sparse matrix by a dense vector in parallel
 void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, double* y);
 
-extern double ghost_get_x(const void *ghost_data, const double *x_local, int col);
-
-// Multiplication with ghost entries
-void matrix_vector_mul_with_ghosts(const SparseMatrixCSR *matrix, const double *x, double *y, const GhostPattern *gp);
 #endif

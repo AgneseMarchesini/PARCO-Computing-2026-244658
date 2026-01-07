@@ -155,19 +155,3 @@ void matrix_vector_mul_parallel(const SparseMatrixCSR* matrix, const double* v, 
     }
 }
 
-extern double ghost_get_x(const void *ghost_data, const double *x_local, int col);
-
-
-void matrix_vector_mul_with_ghosts(const SparseMatrixCSR *matrix, const double *x, double *y, const GhostPattern *gp){
-    for (int i = 0; i < matrix->M; i++) {
-        double sum = 0.0;
-        int start = matrix->row_pnt[i];
-        int end   = matrix->row_pnt[i + 1];
-        for (int j = start; j < end; j++) {
-            int col = matrix->col_pnt[j];
-            double xval = ghost_get_x(gp, x_local, col);
-            sum += matrix->val_pnt[j] * xval;
-        }
-        y[i] = sum;
-    }
-}
