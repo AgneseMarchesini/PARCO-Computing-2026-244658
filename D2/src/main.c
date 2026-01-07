@@ -252,6 +252,12 @@ int main(int argc, char *argv[]){
             }
             MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_full, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
 
+            //debug
+            if (i == 0 && rank == 0) {
+                printf("Mode 0: v_gathered[0]=%f v_gathered[10]=%f v_gathered[100]=%f\n", v_gathered[0], v_gathered[10], v_gathered[100]);
+                printf("recvcounts: [%d,%d,%d,%d] displs: [%d,%d,%d,%d]\n", recvcounts_vec[0], recvcounts_vec[1], recvcounts_vec[2], recvcounts_vec[3], displs_vec[0], displs_vec[1], displs_vec[2], displs_vec[3]);
+            }
+
             // Permute from rank-order to global-order (cyclic unpacking)
             for (int r = 0; r < size; r++) {
                 for (int i = 0; i < recvcounts_vec[r]; i++) {
@@ -262,7 +268,8 @@ int main(int argc, char *argv[]){
 
             //debug
             if (i == 0 && rank == 0) {
-                printf("Mode 0: v_full[0]=%f v_full[1]=%f v_full[100000]=%f\n", v_full[0], v_full[1], v_full[100000]);
+                printf("Mode 0 AFTER PERMUTE: v_full[0]=%f v_full[1]=%f v_full[4]=%f\n", 
+                    v_full[0], v_full[1], v_full[4]);
             }
 
             GET_TIME(end);
