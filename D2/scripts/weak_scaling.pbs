@@ -9,6 +9,10 @@
 # Queue name
 #PBS -q short_cpuQ
 
+# Send email when the job is finished
+#PBS -M agnese.marchesini-1@studenti.unitn.it                                             
+#PBS -m e
+
 # Set the max wall time
 #PBS -l walltime=01:00:00
 
@@ -23,12 +27,15 @@ cd "$PBS_O_WORKDIR" || { echo "PBS_O_WORKDIR not set or inaccessible"; exit 1; }
 EXECUTABLE="./spmv"
 DATA_DIR="D2/data/weak_scaling_matrices"
 RESULTS_DIR="D2/results"
-WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling.csv"
 
-mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c -o spmv
+mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distvec.c -o spmv || { echo "Compilation failed"; exit 1; }
 
 # Setup
 mkdir -p $RESULTS_DIR
+
+# DISTRIBUTED VECTOR MODE = 0
+MODE=0
+WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling_distvec.csv"
 
 echo "Matrix,Processes,T_Comm,T_Comp,GFLOPS,Mem_MB,NZ_Min,NZ_Max,NZ_Avg,Volume_MB" > $WEAK_SCALING_CSV
 
@@ -38,7 +45,43 @@ do
     MATRIX_NAME="weak_${P}p_${ROWS}.mtx"
     echo "Running with $P processes... ($MATRIX_NAME)"
 
-    OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
+    OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME" $MODE 2>&1)
+
+    LINE=$(echo "$OUTPUT" | grep "Max_Comm")
+
+    TIME_COMM=$(echo $LINE | awk '{print $2}')
+
+    TIME_COMP=$(echo $LINE | awk '{print $4}')
+
+    GFLOPS=$(echo $LINE | awk '{print $6}')
+
+    MEM_MB=$(echo $LINE | awk '{print $8}')
+
+    NZ_MIN=$(echo "$OUTPUT" | grep "NZ_Min" | awk '{print $2}')
+
+    NZ_MAX=$(echo "$OUTPUT" | grep "NZ_Max" | awk '{print $2}')
+
+    NZ_AVG=$(echo "$OUTPUT" | grep "NZ_Avg" | awk '{print $2}')
+
+    VOLUME=$(echo "$OUTPUT" | grep "Comm_Volume_MB" | awk '{print $2}')
+
+    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$GFLOPS,$MEM_MB,$NZ_MIN,$NZ_MAX,$NZ_AVG,$VOLUME" >> $WEAK_SCALING_CSV
+done
+
+
+# GHOST ENTRIES MODE = 1
+MODE=1
+WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling_ghost.csv"
+
+echo "Matrix,Processes,T_Comm,T_Comp,GFLOPS,Mem_MB,NZ_Min,NZ_Max,NZ_Avg,Volume_MB" > $WEAK_SCALING_CSV
+
+for P in 1 2 4 8 16 32 64 128
+do
+    ROWS=$((256 * P))
+    MATRIX_NAME="weak_${P}p_${ROWS}.mtx"
+    echo "Running with $P processes... ($MATRIX_NAME)"
+
+    OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME" $MODE 2>&1)
 
     LINE=$(echo "$OUTPUT" | grep "Max_Comm")
 

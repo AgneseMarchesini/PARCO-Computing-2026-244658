@@ -22,13 +22,6 @@ int main(int argc, char *argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    /*
-    if (size < 2) {
-        MPI_Finalize();
-        return 1;
-    }
-    */
-
     if(argc != 3){
         if (rank == 0) {
             printf("Usage: %s <matrix_file> <mode>\n", argv[0]);
@@ -200,10 +193,6 @@ int main(int argc, char *argv[]){
 
     double *v_local = (double*)malloc(my_M * sizeof(double)); // random dense vector
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector
-    /* for(int i = 0; i < my_M; ++i){
-        y[i]=1.0;
-    }
-        */
 
     if (v_local == NULL || y == NULL) {
         fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
@@ -213,8 +202,8 @@ int main(int argc, char *argv[]){
     }
 
     // Initialize LOCAL chunk of v randomly on each rank
-    srand(42 + rank*12345); //FIXED SEED TO SEE IF THE DEBUG CHECKSUM IS CORRECT
-    //srand((unsigned int)(time(NULL) + rank * 12345));  // different seed per rank
+    //srand(42 + rank*12345); //FIXED SEED TO SEE IF THE DEBUG CHECKSUM IS CORRECT
+    srand((unsigned int)(time(NULL) + rank * 12345));  // different seed per rank
     for (int i = 0; i < my_M; i++) {
         v_local[i] = (double)(rand() % 10);
     }
@@ -238,9 +227,6 @@ int main(int argc, char *argv[]){
 
     for(int i=0; i<iterations; i++){
 
-        //debug
-        //if(rank == 0) printf("\n=== Iteration %d START ===\n", i); fflush(stdout);
-
         GET_TIME(start);
         if(!use_ghost){ 
             double *v_gathered = (double*)malloc(N_global * sizeof(double));
@@ -253,24 +239,12 @@ int main(int argc, char *argv[]){
             }
             MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_gathered, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
 
-            //debug
-            if (i == 0 && rank == 0) {
-                printf("Mode 0: v_gathered[0]=%f v_gathered[10]=%f v_gathered[100]=%f\n", v_gathered[0], v_gathered[10], v_gathered[100]);
-                printf("recvcounts: [%d,%d,%d,%d] displs: [%d,%d,%d,%d]\n", recvcounts_vec[0], recvcounts_vec[1], recvcounts_vec[2], recvcounts_vec[3], displs_vec[0], displs_vec[1], displs_vec[2], displs_vec[3]);
-            }
-
             // Permute from rank-order to global-order (cyclic unpacking)
             for (int r = 0; r < size; r++) {
                 for (int i = 0; i < recvcounts_vec[r]; i++) {
                     int global_idx = r + i * size;  
                     v_full[global_idx] = v_gathered[displs_vec[r] + i];
                 }
-            }
-
-            //debug
-            if (i == 0 && rank == 0) {
-                printf("Mode 0 AFTER PERMUTE: v_full[0]=%f v_full[1]=%f v_full[4]=%f\n", 
-                    v_full[0], v_full[1], v_full[4]);
             }
 
             GET_TIME(end);
@@ -283,23 +257,16 @@ int main(int argc, char *argv[]){
             time_comp += (end - start);
             free(v_full);
         } else {
-            //debug
-            //printf("[Rank %d] Before ghost_exchange_values\n", rank); fflush(stdout);
+            
             ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
-            //debug
-            //printf("[Rank %d] After ghost_exchange_values\n", rank); fflush(stdout);
             GET_TIME(end);
+
             time_comm += (end - start);
 
             GET_TIME(start);
-            //debug 
-            if (i == 0 && rank == 0) {
-                printf("Mode 1: v_local[0]=%f v_local[1]=%f v_local[25000]=%f\n", v_local[0], v_local[1], v_local[25000]);
-            }
+
             for (int row = 0; row < my_M; row++) {
 
-                //debug
-                //printf("[Rank %d] Before inline SpMV\n", rank); fflush(stdout);
                 double sum = 0.0;
                 int start_idx = my_row_pnt[row];
                 int end_idx   = my_row_pnt[row + 1];
@@ -309,8 +276,7 @@ int main(int argc, char *argv[]){
                     sum += my_vals[k] * xval;
                 }
                 y[row] = sum;
-                //debug
-                //printf("[Rank %d] After inline SpMV\n", rank); fflush(stdout);
+
             }
             GET_TIME(end);
             time_comp += (end - start);
@@ -318,8 +284,7 @@ int main(int argc, char *argv[]){
 
 
         time_comp += (end-start);
-        //debug
-        //if(rank == 0) printf("=== Iteration %d END ===\n", i); fflush(stdout);
+
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -330,13 +295,6 @@ int main(int argc, char *argv[]){
     double checksum = 0.0;
     for(int i=0; i<my_M; i++) checksum += y[i];
     if (rank == 0) printf("DEBUG_CHECKSUM: %f\n", checksum);
-    
-    /*
-    if(rank==0){
-        printf("Rank %d Row 0 Sum: %f\n", rank, y[0]);
-        printf("Time: %f\n", time_ms);
-    }
-    */ //debugging
 
     // Calculate the max time among all processes
     //MPI_Reduce( const void* sendbuf , void* recvbuf , MPI_Count count , MPI_Datatype datatype , MPI_Op op , int root , MPI_Comm comm);
