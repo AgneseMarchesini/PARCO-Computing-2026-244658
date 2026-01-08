@@ -52,7 +52,7 @@ do
     do
         echo "Running with $P processes..."
 
-        OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME" $MODE)
+        OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME" $MODE 2>&1)
 
         LINE=$(echo "$OUTPUT" | grep "Max_Comm")
 
@@ -88,7 +88,7 @@ do
     do
         echo "Running with $P processes..."
 
-        OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME" $MODE)
+        OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME" $MODE 2>&1)
 
         LINE=$(echo "$OUTPUT" | grep "Max_Comm")
 
