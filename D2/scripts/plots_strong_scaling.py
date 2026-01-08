@@ -8,7 +8,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 
 # Read both CSV files
-INPUT_FILE_DISTVEC = os.path.join(parent_dir, 'results', 'strong_scaling_distvec.csv')
+INPUT_FILE_REPLVEC = os.path.join(parent_dir, 'results', 'strong_scaling_replvec.csv')
 INPUT_FILE_GHOST = os.path.join(parent_dir, 'results', 'strong_scaling_ghost.csv')
 OUTPUT_DIR = os.path.join(parent_dir, 'plots')
 
@@ -133,17 +133,17 @@ def create_plot(df, mode_name, output_filename):
     plt.close()
 
 # Load both datasets
-df_distvec = load_data(INPUT_FILE_DISTVEC, 'Distributed Vector')
+df_replvec = load_data(INPUT_FILE_REPLVEC, 'Replicated Vector')
 df_ghost = load_data(INPUT_FILE_GHOST, 'Ghost Entries')
 
 # Generate plots
-if df_distvec is not None:
-    create_plot(df_distvec, 'Distributed Vector', 'strong_scaling_distvec.png')
+if df_replvec is not None:
+    create_plot(df_replvec, 'Replicated Vector', 'strong_scaling_replvec.png')
     
 if df_ghost is not None:
     create_plot(df_ghost, 'Ghost Entries', 'strong_scaling_ghost.png')
 
-if df_distvec is None and df_ghost is None:
+if df_replvec is None and df_ghost is None:
     print("CRITICAL ERROR: No data files found!")
     exit(1)
 

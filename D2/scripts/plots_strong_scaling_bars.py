@@ -9,7 +9,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 
 # Read both CSV files
-INPUT_FILE_DISTVEC = os.path.join(parent_dir, 'results', 'strong_scaling_distvec.csv')
+INPUT_FILE_REPLVEC = os.path.join(parent_dir, 'results', 'strong_scaling_replvec.csv')
 INPUT_FILE_GHOST = os.path.join(parent_dir, 'results', 'strong_scaling_ghost.csv')
 OUTPUT_DIR = os.path.join(parent_dir, 'plots')
 OUTPUT_FILE = 'strong_scaling_bars_comparison.png'
@@ -70,20 +70,20 @@ def load_data(input_file):
     return df
 
 # Load both datasets
-df_distvec = load_data(INPUT_FILE_DISTVEC)
+df_replvec = load_data(INPUT_FILE_REPLVEC)
 df_ghost = load_data(INPUT_FILE_GHOST)
 
-if df_distvec is None or df_ghost is None:
+if df_replvec is None or df_ghost is None:
     print("CRITICAL ERROR: One or both data files not found!")
     exit(1)
 
-# Create 2 Rows x 5 Columns (Row 1 = Distributed Vector, Row 2 = Ghost Entries)
+# Create 2 Rows x 5 Columns (Row 1 = Replicated Vector, Row 2 = Ghost Entries)
 fig, axes = plt.subplots(2, 5, figsize=(25, 10))
 
-# Row 0: Distributed Vector
+# Row 0: Replicated Vector
 # Row 1: Ghost Entries
 datasets = [
-    (df_distvec, 'Distributed Vector'),
+    (df_replvec, 'Replicated Vector'),
     (df_ghost, 'Ghost Entries')
 ]
 

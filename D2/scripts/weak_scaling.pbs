@@ -28,14 +28,14 @@ EXECUTABLE="./spmv"
 DATA_DIR="D2/data/weak_scaling_matrices"
 RESULTS_DIR="D2/results"
 
-mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distvec.c -o spmv || { echo "Compilation failed"; exit 1; }
+mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/replvec.c -o spmv || { echo "Compilation failed"; exit 1; }
 
 # Setup
 mkdir -p $RESULTS_DIR
 
-# DISTRIBUTED VECTOR MODE = 0
+# REPLICATED VECTOR MODE = 0
 MODE=0
-WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling_distvec.csv"
+WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling_replvec.csv"
 
 echo "Matrix,Processes,T_Comm,T_Comp,GFLOPS,Mem_MB,NZ_Min,NZ_Max,NZ_Avg,Volume_MB" > $WEAK_SCALING_CSV
 

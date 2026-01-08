@@ -4,7 +4,7 @@
 #include "mmio.h"
 #include "matrix.h"
 #include "ghost_entries.h"
-#include "distvec.h"
+#include "replvec.h"
 #include "timer.h"
 #include <mpi.h>
 #include <time.h>
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]){
 
     int *recvcounts_vec = (int *)malloc(size * sizeof(int));
     int *displs_vec = (int *)malloc(size * sizeof(int));
-    dist_build_counts_displs(size, my_M, recvcounts_vec, displs_vec, MPI_COMM_WORLD);
+    repl_build_counts_displs(size, my_M, recvcounts_vec, displs_vec, MPI_COMM_WORLD);
 
     double *v_local = (double*)malloc(my_M * sizeof(double)); // random dense vector
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector

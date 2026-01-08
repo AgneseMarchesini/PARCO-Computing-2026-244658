@@ -1,7 +1,7 @@
 #include <mpi.h>
-#include "distvec.h"
+#include "replvec.h"
 
-void dist_build_counts_displs(int size, int my_M, int *recvcounts, int *displs, MPI_Comm comm){
+void repl_build_counts_displs(int size, int my_M, int *recvcounts, int *displs, MPI_Comm comm){
     MPI_Allgather(&my_M, 1, MPI_INT, recvcounts, 1, MPI_INT, comm);
 
     displs[0] = 0;
