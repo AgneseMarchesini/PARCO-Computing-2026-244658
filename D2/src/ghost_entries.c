@@ -167,6 +167,14 @@ double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
     return gp->ghost_x[ghost_pos];
 }
 
+int ghost_get_total_ghosts(const GhostPattern *gp) {
+    int total = 0;
+    for (int p = 0; p < gp->size; p++) {
+        total += gp->need_count[p];
+    }
+    return total;
+}
+
 
 void ghost_free(GhostPattern *gp){
     if (!gp) return;

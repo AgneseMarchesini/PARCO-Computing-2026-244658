@@ -45,6 +45,8 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
 // Get value x[col], either local or ghost, using the pattern.
 double ghost_get_x(const GhostPattern *gp, const double *x, int col);
 
+int ghost_get_total_ghosts(const GhostPattern *gp);
+
 
 // Free all memory allocated
 void ghost_free(GhostPattern *gp);

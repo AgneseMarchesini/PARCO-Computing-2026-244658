@@ -277,7 +277,7 @@ int main(int argc, char *argv[]){
     // Communication volume per rank
     long long total_ghost_entries = 0;
     for(int p = 0; p < size; p++) {
-        total_ghost_entries += gp->need_count[p];
+        long long total_ghost_entries = ghost_get_total_ghosts(&gp);
     }
     long long comm_volume_bytes = total_ghost_entries * sizeof(double);
 
