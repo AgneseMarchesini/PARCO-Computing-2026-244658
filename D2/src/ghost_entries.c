@@ -57,11 +57,13 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
 }
 
 void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
+    
     int size = gp->size;
 
     gp->recv_count = (int*) calloc(size, sizeof(int));
     MPI_Alltoall(gp->need_count, 1, MPI_INT, gp->recv_count, 1, MPI_INT, comm);
 
+    // Compute send/recv displacements for Alltoallv
     int *send_displs = (int*)malloc(size * sizeof(int));
     int *recv_displs = (int*)malloc(size * sizeof(int));
     send_displs[0] = 0;
@@ -71,6 +73,7 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
         recv_displs[p] = recv_displs[p-1] + gp->recv_count[p-1];
     }
 
+    // Pack all send data contiguously
     int total_send = send_displs[size-1] + gp->need_count[size-1];
     int total_recv = recv_displs[size-1] + gp->recv_count[size-1];
     int *send_buf = (int*)malloc(total_send * sizeof(int));
@@ -80,8 +83,10 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
         memcpy(send_buf + send_displs[p], gp->need_idx_from[p], gp->need_count[p] * sizeof(int));
     }
 
+    // Single Alltoallv exchange
     MPI_Alltoallv(send_buf, gp->need_count, send_displs, MPI_INT, recv_buf, gp->recv_count, recv_displs, MPI_INT, comm);
 
+    // Unpack received data
     gp->send_idx_to = (int**) calloc(size, sizeof(int*));
     for (int p = 0; p < size; p++) {
         if (gp->recv_count[p] > 0) {
@@ -114,11 +119,13 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
             gp->col_to_ghost[col] = gp->ghost_disp[p] + i;
         }
     }
+
 }
 
 void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm){
     int size = gp->size;
 
+    // Compute displacements
     int *send_displs = (int*)malloc(size * sizeof(int));
     int *recv_displs = (int*)malloc(size * sizeof(int));
     send_displs[0] = 0;
@@ -128,6 +135,7 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
         recv_displs[p] = recv_displs[p-1] + gp->need_count[p-1];
     }
 
+    // Pack send data
     int total_send = send_displs[size-1] + gp->recv_count[size-1];
     double *send_buf = (double*)malloc(total_send * sizeof(double));
 
@@ -139,13 +147,14 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
         }
     }
 
+    // Single Alltoallv exchange
     MPI_Alltoallv(send_buf, gp->recv_count, send_displs, MPI_DOUBLE, gp->ghost_x, gp->need_count, gp->ghost_disp, MPI_DOUBLE, comm);
 
     free(send_buf);
     free(send_displs);
     free(recv_displs);
-}
 
+}
 
 double ghost_get_x(const GhostPattern *gp, const double *x_local, int col){
     int owner = col % gp->size;
