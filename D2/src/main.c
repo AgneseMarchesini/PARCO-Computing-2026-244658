@@ -302,7 +302,7 @@ int main(int argc, char *argv[]){
         printf("NZ_Avg: %f \n", avg_nz);
         printf("Comm_Volume_MB: %f \n", max_comm_volume / (1024.0 * 1024.0)); //conversion to mb
         */
-        printf("STATS: %f %f %f %f %f %d %d %f %f", max_comm, max_comp, total_time, gflops, global_mem, min_nz, max_nz, avg_nz, max_comm_volume/(1024.0*1024.0));
+        printf("STATS: %f %f %f %f %f %d %d %f %f \n", max_comm, max_comp, total_time, gflops, global_mem, min_nz, max_nz, avg_nz, max_comm_volume/(1024.0*1024.0));
     }
 
     ghost_free(&gp);
