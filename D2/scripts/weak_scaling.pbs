@@ -44,23 +44,19 @@ do
 
     OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
     
-    LINE=$(echo "$OUTPUT" | grep "Max_Comm")
+    STATS_LINE=$(echo "$OUTPUT" | grep "STATS:")
+        
+        # printf("STATS: %f %f %f %f %f %d %d %f %f", max_comm, max_comp, total_time, gflops, global_mem, min_nz, max_nz, avg_nz, max_comm_volume/(1024.0*1024.0));
 
-    TIME_COMM=$(echo $LINE | awk '{print $2}')
-    TIME_COMP=$(echo $LINE | awk '{print $4}')
-    TOT_TIME=$(echo $LINE | awk '{print $6}')
-
-    GFLOPS=$(echo $OUTPUT | grep "GFLOPS" | awk '{print $2}')
-
-    MEM_MB=$(echo $OUTPUT | grep "Mem_MB" | awk '{print $2}')
-
-    NZ_MIN=$(echo "$OUTPUT" | grep "NZ_Min" | awk '{print $2}')
-
-    NZ_MAX=$(echo "$OUTPUT" | grep "NZ_Max" | awk '{print $2}')
-
-    NZ_AVG=$(echo "$OUTPUT" | grep "NZ_Avg" | awk '{print $2}')
-
-    VOLUME=$(echo "$OUTPUT" | grep "Comm_Volume_MB" | awk '{print $2}')
+        TIME_COMM=$(echo "$STATS_LINE" | awk '{print $2}')
+        TIME_COMP=$(echo "$STATS_LINE" | awk '{print $3}')
+        TOT_TIME=$(echo "$STATS_LINE" | awk '{print $4}')
+        GFLOPS=$(echo "$STATS_LINE" | awk '{print $5}')
+        MEM_MB=$(echo "$STATS_LINE" | awk '{print $6}')
+        NZ_MIN=$(echo "$STATS_LINE" | awk '{print $7}')
+        NZ_MAX=$(echo "$STATS_LINE" | awk '{print $8}')
+        NZ_AVG=$(echo "$STATS_LINE" | awk '{print $9}')
+        VOLUME=$(echo "$STATS_LINE" | awk '{print $10}')
 
     echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$TOT_TIME,$GFLOPS,$MEM_MB,$NZ_MIN,$NZ_MAX,$NZ_AVG,$VOLUME" >> $WEAK_SCALING_CSV
 done

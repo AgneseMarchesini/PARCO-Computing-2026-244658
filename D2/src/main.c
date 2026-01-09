@@ -293,6 +293,7 @@ int main(int argc, char *argv[]){
 
         double total_time = max_comm + max_comp; 
 
+        /*
         printf("Max_Comm: %f Max_Comp: %f Tot_time: %f \n", max_comm, max_comp, total_time);
         printf("GFLOPS: %f \n", gflops);
         printf("Mem_MB: %f \n", global_mem);
@@ -300,6 +301,8 @@ int main(int argc, char *argv[]){
         printf("NZ_Max: %d \n", max_nz);
         printf("NZ_Avg: %f \n", avg_nz);
         printf("Comm_Volume_MB: %f \n", max_comm_volume / (1024.0 * 1024.0)); //conversion to mb
+        */
+        printf("STATS: %f %f %f %f %f %d %d %f %f", max_comm, max_comp, total_time, gflops, global_mem, min_nz, max_nz, avg_nz, max_comm_volume/(1024.0*1024.0));
     }
 
     ghost_free(&gp);
