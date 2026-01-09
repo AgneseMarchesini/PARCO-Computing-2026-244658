@@ -53,6 +53,10 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
         }
     }
 
+    //debug
+    printf("Rank %d: need_count[%d]=%d\n", gp->rank, p, gp->need_count[p]);
+
+
     free(capacity);
 }
 

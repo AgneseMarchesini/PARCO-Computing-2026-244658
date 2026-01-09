@@ -57,9 +57,9 @@ do
         TIME_COMP=$(echo $LINE | awk '{print $4}')
         TOT_TIME=$(echo $LINE | awk '{print $6}')
 
-        GFLOPS=$(echo $LINE | grep "GFLOPS" | awk '{print $2}')
+        GFLOPS=$(echo $OUTPUT | grep "GFLOPS" | awk '{print $2}')
 
-        MEM_MB=$(echo $LINE | grep "Mem_MB" | awk '{print $2}')
+        MEM_MB=$(echo $OUTPUT | grep "Mem_MB" | awk '{print $2}')
 
         NZ_MIN=$(echo "$OUTPUT" | grep "NZ_Min" | awk '{print $2}')
 
