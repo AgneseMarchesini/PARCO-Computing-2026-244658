@@ -4,7 +4,6 @@
 #include "mmio.h"
 #include "matrix.h"
 #include "ghost_entries.h"
-#include "replvec.h"
 #include "timer.h"
 #include <mpi.h>
 #include <time.h>
@@ -22,30 +21,15 @@ int main(int argc, char *argv[]){
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    if(argc != 3){
+    if(argc != 2){
         if (rank == 0) {
-            printf("Usage: %s <matrix_file> <mode>\n", argv[0]);
-            printf("Mode 0 = replicated vector\n");
-            printf("Mode 1 = ghost entries\n");
+            printf("Usage: %s <matrix_file>\n", argv[0]);
         }
         MPI_Finalize();
         return 1;
     }
 
     char* matrix_file = argv[1];
-    int mode = atoi(argv[2]); // 0 or 1
-    if(mode != 0 && mode != 1){
-        if(rank == 0){
-            fprintf(stderr, "ERROR: mode must be 0 or 1 \n");
-        }
-        MPI_Finalize();
-        return 1;
-    }
-
-    bool use_ghost;
-    if(mode == 1){
-        use_ghost = true;
-    } else use_ghost = false;
 
     SparseMatrixCSR matrix;
 
@@ -187,10 +171,6 @@ int main(int argc, char *argv[]){
         my_row_pnt[i+1] = my_row_pnt[i] + my_row_len[i];
     }
 
-    int *recvcounts_vec = (int *)malloc(size * sizeof(int));
-    int *displs_vec = (int *)malloc(size * sizeof(int));
-    repl_build_counts_displs(size, my_M, recvcounts_vec, displs_vec, MPI_COMM_WORLD);
-
     double *v_local = (double*)malloc(my_M * sizeof(double)); // random dense vector
     double *y = (double*)calloc(my_M, sizeof(double)); // result vector
 
@@ -215,11 +195,9 @@ int main(int argc, char *argv[]){
 
     // Build ghost pattern 
     GhostPattern gp;
-    if(use_ghost){
-        ghost_build_ownership(&gp, size, rank, recvcounts_vec);
-        ghost_build_pattern(&gp, &local_matrix);
-        ghost_exchange_index_lists(&gp, N_global, MPI_COMM_WORLD);
-    }
+    ghost_build_ownership(&gp, size, rank, recvcounts_vec);
+    ghost_build_pattern(&gp, &local_matrix);
+    ghost_exchange_index_lists(&gp, N_global, MPI_COMM_WORLD);
     
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
@@ -228,62 +206,27 @@ int main(int argc, char *argv[]){
     for(int i=0; i<iterations; i++){
 
         GET_TIME(start);
-        if(!use_ghost){ 
-            double *v_gathered = (double*)malloc(N_global * sizeof(double));
-            double *v_full = (double*)malloc(N_global * sizeof(double));
-            if (v_full == NULL || v_gathered == NULL) { 
-                fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
-                fprintf(stderr, "v_full\n"); //debugging
-                MPI_Abort(MPI_COMM_WORLD, 1);
-                return 1;
+        ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
+        GET_TIME(end);
+
+        time_comm += (end - start);
+
+        GET_TIME(start);
+
+        for (int row = 0; row < my_M; row++) {
+            double sum = 0.0;
+            int start_idx = my_row_pnt[row];
+            int end_idx   = my_row_pnt[row + 1];
+            for (int k = start_idx; k < end_idx; k++) {
+                int col = my_cols[k];
+                double xval = ghost_get_x(&gp, v_local, col);
+                sum += my_vals[k] * xval;
             }
-            MPI_Allgatherv(v_local, my_M, MPI_DOUBLE, v_gathered, recvcounts_vec, displs_vec, MPI_DOUBLE, MPI_COMM_WORLD);
-
-            // Permute from rank-order to global-order (cyclic unpacking)
-            for (int r = 0; r < size; r++) {
-                for (int i = 0; i < recvcounts_vec[r]; i++) {
-                    int global_idx = r + i * size;  
-                    v_full[global_idx] = v_gathered[displs_vec[r] + i];
-                }
-            }
-
-            GET_TIME(end);
-            time_comm += (end - start);
-
-            // Computation phase
-            GET_TIME(start);
-            matrix_vector_mul_sequential(&local_matrix, v_full, y);
-            GET_TIME(end);
-            time_comp += (end - start);
-            free(v_full);
-        } else {
-            
-            ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
-            GET_TIME(end);
-
-            time_comm += (end - start);
-
-            GET_TIME(start);
-
-            for (int row = 0; row < my_M; row++) {
-
-                double sum = 0.0;
-                int start_idx = my_row_pnt[row];
-                int end_idx   = my_row_pnt[row + 1];
-                for (int k = start_idx; k < end_idx; k++) {
-                    int col = my_cols[k];
-                    double xval = ghost_get_x(&gp, v_local, col);
-                    sum += my_vals[k] * xval;
-                }
-                y[row] = sum;
-
-            }
-            GET_TIME(end);
-            time_comp += (end - start);
+            y[row] = sum;
         }
-
-
-        time_comp += (end-start);
+        GET_TIME(end);
+        time_comp += (end - start);
+        
 
     }
 
@@ -292,9 +235,11 @@ int main(int argc, char *argv[]){
     double avg_comm = (time_comm * 1000.0) / iterations;
     double avg_comp = (time_comp * 1000.0) / iterations;
 
+    /*
     double checksum = 0.0;
     for(int i=0; i<my_M; i++) checksum += y[i];
     if (rank == 0) printf("DEBUG_CHECKSUM: %f\n", checksum);
+    */
 
     // Calculate the max time among all processes
     //MPI_Reduce( const void* sendbuf , void* recvbuf , MPI_Count count , MPI_Datatype datatype , MPI_Op op , int root , MPI_Comm comm);
@@ -304,21 +249,9 @@ int main(int argc, char *argv[]){
     MPI_Reduce(&avg_comm, &max_comm, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&avg_comp, &max_comp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    // flops
-    double gflops = ( (2.0 * (double)NZ_global) / max_comp) / 1e9;
-
-    // memory footprint
-    long mem_bytes = 0;
-    mem_bytes += local_matrix.nz * sizeof(double);          // val
-    mem_bytes += local_matrix.nz * sizeof(int);             // col
-    mem_bytes += (my_M + 1) * sizeof(int);                  // row_ptr
-    mem_bytes += (use_ghost ? my_M : N_global) * sizeof(double); // vector x 
-    mem_bytes += my_M * sizeof(double);                     // vector y 
-
-    double mem_mb = mem_bytes / (1024.0 * 1024.0);
-    double max_mem_mb = 0.0;
-
-    MPI_Reduce(&mem_mb, &max_mem_mb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    double local_mem = (my_nz * sizeof(double) + my_nz * sizeof(int) + (my_M+1) * sizeof(int) + my_M * sizeof(double)) / 1024.0 / 1024.0;
+    double global_mem;
+    MPI_Reduce(&local_mem, &global_mem, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     // NNZ per rank (min,max,avg)
     int min_nz, max_nz, sum_nz;
@@ -327,25 +260,34 @@ int main(int argc, char *argv[]){
     MPI_Reduce(&my_nz, &sum_nz, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     // Communication volume per rank
-    long comm_volume_bytes = (N_global * sizeof(double)) - (my_M * sizeof(double)); // total vector size - my local part
-    long max_comm_volume;
-    MPI_Reduce(&comm_volume_bytes, &max_comm_volume, 1, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
-    double comm_mb_max = max_comm_volume / (1024.0 * 1024.0); //conversion to mb
+    long long total_ghost_entries = 0;
+    for(int p = 0; p < size; p++) {
+        total_ghost_entries += gp->need_count[p];
+    }
+    long long comm_volume_bytes = total_ghost_entries * sizeof(double);
+
+    long long max_comm_volume;
+    MPI_Reduce(&comm_volume_bytes, &max_comm_volume, 1, MPI_LONG_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
 
 
     if (rank == 0) {
+        //gflops only on computation time
+        double gflops = (2.0 * NZ_global) / ((max_comp) / 1000.0) / 1e9; //in seconds
+        
         double avg_nz = (double)sum_nz / size;
 
-        printf("Max_Comm: %f Max_Comp: %f GFLOPS: %f Mem_MB: %f \n", max_comm, max_comp, gflops, max_mem_mb);
+        double total_time = max_comm + max_comp; 
+
+        printf("Max_Comm: %f Max_Comp: %f Tot_time: %f \n", max_comm, max_comp, total_time);
+        printf("GFLOPS: %f \n", gflops);
+        printf("Mem_MB: %f \n", global_mem);
         printf("NZ_Min: %d \n", min_nz);
         printf("NZ_Max: %d \n", max_nz);
         printf("NZ_Avg: %f \n", avg_nz);
-        printf("Comm_Volume_MB: %f \n", comm_mb_max);
+        printf("Comm_Volume_MB: %f \n", max_comm_volume / (1024.0 * 1024.0)); //conversion to mb
     }
 
-    if(use_ghost){
-        ghost_free(&gp);
-    }
+    ghost_free(&gp);
     free(my_row_len);
     free(my_cols);
     free(my_vals);
