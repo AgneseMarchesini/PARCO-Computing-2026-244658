@@ -31,6 +31,8 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
     for (int p = 0; p < size; p++) {
         capacity[p] = 16;
         gp->need_idx_from[p] = (int*) malloc(capacity[p] * sizeof(int));
+        //debug
+        printf("Rank %d: need_count[%d]=%d\n", gp->rank, p, gp->need_count[p]);
     }
 
     for (int row = 0; row < matrix->M; row++) {
@@ -52,10 +54,6 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
             gp->need_count[owner]++;
         }
     }
-
-    //debug
-    printf("Rank %d: need_count[%d]=%d\n", gp->rank, p, gp->need_count[p]);
-
 
     free(capacity);
 }
