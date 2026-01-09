@@ -59,7 +59,6 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
 void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
     
     int size = gp->size;
-    int rank = gp->rank;
 
     gp->recv_count = (int*) calloc(size, sizeof(int));
     MPI_Alltoall(gp->need_count, 1, MPI_INT, gp->recv_count, 1, MPI_INT, comm);
@@ -125,7 +124,6 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
 
 void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm){
     int size = gp->size;
-    int rank = gp->rank;
 
     // Compute displacements
     int *send_displs = (int*)malloc(size * sizeof(int));

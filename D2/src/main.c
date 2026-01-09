@@ -193,6 +193,21 @@ int main(int argc, char *argv[]){
     SparseMatrixCSR local_matrix;
     matrix_init(&local_matrix, my_M, N_global, my_nz, my_row_pnt, my_cols, my_vals);
 
+    int *recvcounts_vec = (int*)malloc(size * sizeof(int));
+    int *displs_vec = (int*)malloc(size * sizeof(int));
+    if (recvcounts_vec == NULL || displs_vec == NULL) {
+        fprintf(stderr, "CRITICAL ERROR: Malloc failed for recvcounts_vec/displs_vec\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+        return 1;
+    }
+    MPI_Allgather(&my_M, 1, MPI_INT, recvcounts_vec, 1, MPI_INT, MPI_COMM_WORLD);
+    // Compute displs
+    displs_vec[0] = 0;
+    for (int i = 1; i < size; i++) {
+        displs_vec[i] = displs_vec[i-1] + recvcounts_vec[i-1];
+    }
+
+
     // Build ghost pattern 
     GhostPattern gp;
     ghost_build_ownership(&gp, size, rank, recvcounts_vec);
@@ -295,7 +310,6 @@ int main(int argc, char *argv[]){
     free(v_local);
     free(y);
     free(recvcounts_vec);
-    free(displs_vec);
     MPI_Finalize();
     return 0;
 }
