@@ -58,44 +58,42 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
 
 void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
     int size = gp->size;
-    int rank = gp->rank;
-    
+
     gp->recv_count = (int*) calloc(size, sizeof(int));
     MPI_Alltoall(gp->need_count, 1, MPI_INT, gp->recv_count, 1, MPI_INT, comm);
 
     int *send_displs = (int*)malloc(size * sizeof(int));
+    int *recv_displs = (int*)malloc(size * sizeof(int));
     send_displs[0] = 0;
+    recv_displs[0] = 0;
     for (int p = 1; p < size; p++) {
         send_displs[p] = send_displs[p-1] + gp->need_count[p-1];
+        recv_displs[p] = recv_displs[p-1] + gp->recv_count[p-1];
     }
+
     int total_send = send_displs[size-1] + gp->need_count[size-1];
+    int total_recv = recv_displs[size-1] + gp->recv_count[size-1];
     int *send_buf = (int*)malloc(total_send * sizeof(int));
+    int *recv_buf = (int*)malloc(total_recv * sizeof(int));
+
     for (int p = 0; p < size; p++) {
         memcpy(send_buf + send_displs[p], gp->need_idx_from[p], gp->need_count[p] * sizeof(int));
     }
 
+    MPI_Alltoallv(send_buf, gp->need_count, send_displs, MPI_INT, recv_buf, gp->recv_count, recv_displs, MPI_INT, comm);
+
     gp->send_idx_to = (int**) calloc(size, sizeof(int*));
     for (int p = 0; p < size; p++) {
         if (gp->recv_count[p] > 0) {
-            gp->send_idx_to[p] = (int*)malloc(gp->recv_count[p] * sizeof(int));
-            
-            if (p == rank) {
-                // Self-copy
-                memcpy(gp->send_idx_to[p], send_buf + send_displs[p], gp->recv_count[p] * sizeof(int));
-            } else {
-                // Receive from p (their send to us)
-                MPI_Recv(gp->send_idx_to[p], gp->recv_count[p], MPI_INT, p, 0, comm, MPI_STATUS_IGNORE);
-            }
-        }
-        
-        // Send to p (if needed)
-        if (p != rank && gp->need_count[p] > 0) {
-            MPI_Send(gp->need_idx_from[p], gp->need_count[p], MPI_INT, p, 0, comm);
+            gp->send_idx_to[p] = (int*) malloc(gp->recv_count[p] * sizeof(int));
+            memcpy(gp->send_idx_to[p], recv_buf + recv_displs[p], gp->recv_count[p] * sizeof(int));
         }
     }
 
     free(send_buf);
+    free(recv_buf);
     free(send_displs);
+    free(recv_displs);
 
     gp->ghost_disp = (int*) malloc(size * sizeof(int));
     int total_ghosts = 0;
@@ -120,15 +118,19 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
 
 void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm){
     int size = gp->size;
-    int rank = gp->rank;
 
     int *send_displs = (int*)malloc(size * sizeof(int));
+    int *recv_displs = (int*)malloc(size * sizeof(int));
     send_displs[0] = 0;
+    recv_displs[0] = 0;
     for (int p = 1; p < size; p++) {
         send_displs[p] = send_displs[p-1] + gp->recv_count[p-1];
+        recv_displs[p] = recv_displs[p-1] + gp->need_count[p-1];
     }
+
     int total_send = send_displs[size-1] + gp->recv_count[size-1];
     double *send_buf = (double*)malloc(total_send * sizeof(double));
+
     for (int p = 0; p < size; p++) {
         for (int i = 0; i < gp->recv_count[p]; i++) {
             int global_idx = gp->send_idx_to[p][i];
@@ -137,25 +139,11 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm com
         }
     }
 
-    for (int p = 0; p < size; p++) {
-        if (gp->need_count[p] > 0) {
-            if (p == rank) {
-                // Self-copy local values to ghost_x
-                for (int i = 0; i < gp->need_count[p]; i++) {
-                    int col = gp->need_idx_from[p][i];
-                    gp->ghost_x[gp->ghost_disp[p] + i] = x_local[col / size];
-                }
-            } else {
-                // Receive ghosts from p
-                MPI_Recv(gp->ghost_x + gp->ghost_disp[p], gp->need_count[p], MPI_DOUBLE, p, 1, comm, MPI_STATUS_IGNORE);
-                // Send values to p
-                MPI_Send(send_buf + send_displs[p], gp->recv_count[p], MPI_DOUBLE, p, 1, comm);
-            }
-        }
-    }
+    MPI_Alltoallv(send_buf, gp->recv_count, send_displs, MPI_DOUBLE, gp->ghost_x, gp->need_count, gp->ghost_disp, MPI_DOUBLE, comm);
 
     free(send_buf);
     free(send_displs);
+    free(recv_displs);
 }
 
 
