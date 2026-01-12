@@ -103,7 +103,7 @@ int distribute_matrix_cyclic(const char *matrix_file, LocalMatrix *local, int ra
         local->my_row_len = (int*)malloc(local->my_M * sizeof(int));
         local->my_cols = (int*)malloc(local->my_nz * sizeof(int));
         local->my_vals = (double*)malloc(local->my_nz * sizeof(double));
-        if (my_row_len == NULL || my_cols == NULL || my_vals == NULL) {
+        if (local->my_row_len == NULL || local->my_cols == NULL || local->my_vals == NULL) {
             fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
             fprintf(stderr, "my_row_len, my_cols, my_vals\n"); //debugging
             MPI_Abort(MPI_COMM_WORLD, 1);
@@ -119,7 +119,7 @@ int distribute_matrix_cyclic(const char *matrix_file, LocalMatrix *local, int ra
     
     // We have the row len, we need row pointers:
     local->my_row_pnt = (int*)malloc((local->my_M + 1) * sizeof(int));
-    if (my_row_pnt == NULL) {
+    if (local->my_row_pnt == NULL) {
         fprintf(stderr, "CRITICAL ERROR: Malloc failed.\n");
         fprintf(stderr, "my_row_pnt\n"); //debugging
         MPI_Abort(MPI_COMM_WORLD, 1);

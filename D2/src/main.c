@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
     int warmup = 3;
     for(int i=0; i<warmup; i++){
         ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
-        ghost_local_spmv(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
+        ghost_local_SpMV(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
     }   
     for(int row = 0; row < local.my_M; row++){
         y[row] = 0.0;
