@@ -47,6 +47,8 @@ double ghost_get_x(const GhostPattern *gp, const double *x, int col);
 
 int ghost_get_total_ghosts(const GhostPattern *gp);
 
+void ghost_local_SpMV(int my_M, int *my_row_pnt, int *my_cols, double *my_vals, GhostPattern *gp, double *v_local, double *y);
+
 
 // Free all memory allocated
 void ghost_free(GhostPattern *gp);

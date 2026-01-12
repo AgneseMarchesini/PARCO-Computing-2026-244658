@@ -175,6 +175,20 @@ int ghost_get_total_ghosts(const GhostPattern *gp) {
     return total;
 }
 
+void ghost_local_SpMV(int my_M, int *my_row_pnt, int *my_cols, double *my_vals, GhostPattern *gp, double *v_local, double *y) {
+    for (int row = 0; row < my_M; row++) {
+        double sum = 0.0;
+        int start_idx = my_row_pnt[row];
+        int end_idx = my_row_pnt[row + 1];
+        for (int k = start_idx; k < end_idx; k++) {
+            int col = my_cols[k];
+            double xval = ghost_get_x(gp, v_local, col);
+            sum += my_vals[k] * xval;
+        }
+        y[row] = sum;
+    }
+}
+
 
 void ghost_free(GhostPattern *gp){
     if (!gp) return;
