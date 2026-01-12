@@ -37,6 +37,7 @@ RESULTS_DIR="D2/results"
 STRONG_SCALING_CSV="$RESULTS_DIR/strong_scaling.csv"
 
 mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distribution.c -o spmv || { echo "Compilation failed"; exit 1; }
+chmod +x ./spmv
 
 # Setup
 mkdir -p $RESULTS_DIR
