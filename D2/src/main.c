@@ -54,7 +54,7 @@ int main(int argc, char *argv[]){
 
     // Multiplication
     SparseMatrixCSR local_matrix;
-    matrix_init(&local_matrix, local.my_M, local.N_global, local.local.my_nz, local.my_row_pnt, local.my_cols, local.my_vals);
+    matrix_init(&local_matrix, local.my_M, local.N_global, local.my_nz, local.my_row_pnt, local.my_cols, local.my_vals);
 
     int *recvcounts_vec = (int*)malloc(size * sizeof(int));
     int *displs_vec = (int*)malloc(size * sizeof(int));
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]){
         time_comm += (end - start);
 
         GET_TIME(start);
-        ghost_local_spmv(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
+        ghost_local_SpMV(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
         GET_TIME(end);
         time_comp += (end - start);
     }
