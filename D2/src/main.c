@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
         times_comm[i] = (end - start) * 1000.0;
 
         GET_TIME(start);
-        ghost_local_SpMV(&local_matrix, x_extended, y, local.my_M);
+        matrix_vector_mul_sequential(&local_matrix, x_extended, y);
         GET_TIME(end);
 
         times_comp[i] = (end - start) * 1000.0;
