@@ -19,6 +19,9 @@ void ghost_build_ownership(GhostPattern *gp, int size, int rank, const int *recv
     }
 }
 
+static int compare_ints(const void *a, const void *b) {
+    return (*(int*)a - *(int*)b);
+}
 
 void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
     int size = gp->size;
@@ -33,6 +36,7 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
         gp->need_idx_from[p] = (int*) malloc(capacity[p] * sizeof(int));
     }
 
+    // identify all needed ghosts (includes duplicates)
     for (int row = 0; row < matrix->M; row++) {
         int start = matrix->row_pnt[row];
         int end   = matrix->row_pnt[row + 1];
@@ -53,9 +57,27 @@ void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix){
         }
     }
 
+    // sort and deduplicate
+    for (int p = 0; p < size; p++) {
+        if (gp->need_count[p] > 0) {
+            // sort the requested indices for this rank
+            qsort(gp->need_idx_from[p], gp->need_count[p], sizeof(int), compare_ints);
+
+            // remove duplicates
+            int unique_idx = 0;
+            for (int i = 1; i < gp->need_count[p]; i++) {
+                if (gp->need_idx_from[p][i] != gp->need_idx_from[p][unique_idx]) {
+                    unique_idx++;
+                    gp->need_idx_from[p][unique_idx] = gp->need_idx_from[p][i];
+                }
+            }
+            // update the count to the unique number of items
+            gp->need_count[p] = unique_idx + 1;
+        }
+    }
+
     free(capacity);
 }
-
 void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm){
     
     int size = gp->size;

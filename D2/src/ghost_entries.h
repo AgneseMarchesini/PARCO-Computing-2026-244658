@@ -29,7 +29,7 @@ typedef struct {
 // Build ownership ranges (row_start/row_end)
 void ghost_build_ownership(GhostPattern *gp, int size, int rank, const int *recvcounts);
 
-
+static int compare_ints(const void *a, const void *b);
 // Analyze the local CSR matrix and discover ghost indices.
 void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix);
 
