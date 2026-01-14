@@ -128,37 +128,42 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, double *x_gh
     
     MPI_Request *recv_reqs = (MPI_Request*)malloc(size * sizeof(MPI_Request));
     MPI_Request *send_reqs = (MPI_Request*)malloc(size * sizeof(MPI_Request));
+    double **send_bufs = (double**)malloc(size * sizeof(double*));  // Track buffers
     int n_recv = 0, n_send = 0;
     
-    // Post receives for ghost values
+    // Post receives
     for (int p = 0; p < size; p++) {
         if (p == rank || gp->need_count[p] == 0) continue;
-        
         int offset = gp->ghost_disp[p];
         int count = gp->need_count[p];
         MPI_Irecv(x_ghost_out + offset, count, MPI_DOUBLE, p, 0, comm, &recv_reqs[n_recv++]);
     }
     
-    // Send values needed by other processes
+    // Send values
     for (int p = 0; p < size; p++) {
         if (p == rank || gp->recv_count[p] == 0) continue;
         
         int count = gp->recv_count[p];
-        double *send_buf = (double*)malloc(count * sizeof(double));
+        send_bufs[n_send] = (double*)malloc(count * sizeof(double));
         
-        // Pack values that process p needs
         for (int i = 0; i < count; i++) {
             int global_idx = gp->send_idx_to[p][i];
-            int local_idx = global_idx / size;  // Convert global to local
-            send_buf[i] = x_local[local_idx];
+            int local_idx = global_idx / size;
+            send_bufs[n_send][i] = x_local[local_idx];
         }
         
-        MPI_Isend(send_buf, count, MPI_DOUBLE, p, 0, comm, &send_reqs[n_send++]);
+        MPI_Isend(send_bufs[n_send], count, MPI_DOUBLE, p, 0, comm, &send_reqs[n_send]);
+        n_send++;
     }
     
     MPI_Waitall(n_recv, recv_reqs, MPI_STATUSES_IGNORE);
     MPI_Waitall(n_send, send_reqs, MPI_STATUSES_IGNORE);
+
+    for (int i = 0; i < n_send; i++) {
+        free(send_bufs[i]);
+    }
     
+    free(send_bufs);
     free(recv_reqs);
     free(send_reqs);
 }
