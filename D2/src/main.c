@@ -76,7 +76,7 @@ int main(int argc, char *argv[]){
     ghost_build_ownership(&gp, size, rank, recvcounts_vec);
     ghost_build_pattern(&gp, &local_matrix);
     ghost_exchange_index_lists(&gp, local.N_global, MPI_COMM_WORLD);
-    ghost_renumber_columns(&local_matrix, &gp, local.N_global, local.n_local);
+    ghost_renumber_columns(&local_matrix, &gp, local.N_global, local.my_M);
     
     MPI_Barrier(MPI_COMM_WORLD); 
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
         //new
         double *x_extended;
         ghost_build_extended_vector(v_local, &x_extended, &gp, local.my_M, MPI_COMM_WORLD);
-        ghost_optimized_SpMV(&local_matrix, x_extended, y, local.my_M);
+        ghost_local_SpMV(&local_matrix, x_extended, y, local.my_M);
         free(x_extended);
     }   
     for(int row = 0; row < local.my_M; row++){
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]){
         time_comm += (end - start);
 
         GET_TIME(start);
-        ghost_optimized_SpMV(&local_matrix, x_extended, y, local.my_M);
+        ghost_local_SpMV(&local_matrix, x_extended, y, local.my_M);
         GET_TIME(end);
 
         time_comp += (end - start);
