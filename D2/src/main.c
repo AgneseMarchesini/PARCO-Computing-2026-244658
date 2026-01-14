@@ -8,6 +8,7 @@
 #include "timer.h"
 #include <mpi.h>
 #include <time.h>
+#include <string.h>
 
 // for qsort
 int compare_doubles(const void *a, const void *b) {
