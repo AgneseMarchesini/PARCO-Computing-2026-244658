@@ -101,11 +101,13 @@ int main(int argc, char *argv[]){
     int total_ghosts = ghost_get_total_ghosts(&gp);
     double *x_extended = (double*)malloc((local.my_M + total_ghosts) * sizeof(double));
 
+    //copy local part
+    memcpy(x_extended, v_local, local.my_M * sizeof(double));
+
     // cache warmup
     int warmup = 3;
     for(int i=0; i<warmup; i++){
         ghost_exchange_values(&gp, v_local, x_extended + local.my_M, MPI_COMM_WORLD);
-        memcpy(x_extended, v_local, local.my_M * sizeof(double));
         ghost_local_SpMV(&local_matrix, x_extended, y, local.my_M);
     }
     for(int row = 0; row < local.my_M; row++){
@@ -126,9 +128,6 @@ int main(int argc, char *argv[]){
         GET_TIME(end);
 
         times_comm[i] = (end - start) * 1000.0;
-
-        // Copy local part
-        memcpy(x_extended, v_local, local.my_M * sizeof(double));
 
         GET_TIME(start);
         ghost_local_SpMV(&local_matrix, x_extended, y, local.my_M);
