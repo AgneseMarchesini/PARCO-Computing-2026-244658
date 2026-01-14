@@ -153,8 +153,6 @@ void ghost_exchange_values(GhostPattern *gp, const double *x_local, double *x_gh
     free(recv_displs);
 }
 
-}
-
 void ghost_build_extended_vector(const double *x_local, double **x_extended, GhostPattern *gp, int n_local, MPI_Comm comm){
     int total_ghosts = ghost_get_total_ghosts(gp);
     
