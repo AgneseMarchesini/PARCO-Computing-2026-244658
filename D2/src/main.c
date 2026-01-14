@@ -76,14 +76,22 @@ int main(int argc, char *argv[]){
     ghost_build_ownership(&gp, size, rank, recvcounts_vec);
     ghost_build_pattern(&gp, &local_matrix);
     ghost_exchange_index_lists(&gp, local.N_global, MPI_COMM_WORLD);
+    ghost_renumber_columns(&local_matrix, &gp, local.N_global, local.n_local);
     
     MPI_Barrier(MPI_COMM_WORLD); 
 
     // cache warmup
     int warmup = 3;
     for(int i=0; i<warmup; i++){
-        ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
-        ghost_local_SpMV(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
+        //old version 
+        // ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
+        //ghost_local_SpMV_old(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
+
+        //new
+        double *x_extended;
+        ghost_build_extended_vector(v_local, &x_extended, &gp, local.my_M, MPI_COMM_WORLD);
+        ghost_optimized_SpMV(&local_matrix, x_extended, y, local.my_M);
+        free(x_extended);
     }   
     for(int row = 0; row < local.my_M; row++){
         y[row] = 0.0;
@@ -93,17 +101,21 @@ int main(int argc, char *argv[]){
 
     int iterations = 10;
     for(int i=0; i<iterations; i++){
+        double *x_extended;
 
         GET_TIME(start);
-        ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
+        ghost_build_extended_vector(v_local, &x_extended, &gp, local.my_M, MPI_COMM_WORLD);
         GET_TIME(end);
 
         time_comm += (end - start);
 
         GET_TIME(start);
-        ghost_local_SpMV(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
+        ghost_optimized_SpMV(&local_matrix, x_extended, y, local.my_M);
         GET_TIME(end);
+
         time_comp += (end - start);
+
+        free(x_extended);
     }
 
     double checksum = 0.0;
