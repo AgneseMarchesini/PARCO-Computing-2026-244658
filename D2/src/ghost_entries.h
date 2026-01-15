@@ -29,6 +29,7 @@ typedef struct {
 // Build ownership ranges (row_start/row_end)
 void ghost_build_ownership(GhostPattern *gp, int size, int rank, const int *recvcounts);
 
+
 // Analyze the local CSR matrix and discover ghost indices.
 void ghost_build_pattern(GhostPattern *gp, const SparseMatrixCSR *matrix);
 
@@ -38,20 +39,15 @@ void ghost_exchange_index_lists(GhostPattern *gp, int N_global, MPI_Comm comm);
 
 
 // For a given input vector x  exchange the ghost values according to the pre-built pattern.
-void ghost_exchange_values(GhostPattern *gp, const double *x_local, double *x_ghost_out, MPI_Comm comm);
+void ghost_exchange_values(GhostPattern *gp, const double *x_local, MPI_Comm comm);
 
-void ghost_build_extended_vector(const double *x_local, double **x_extended, GhostPattern *gp, int n_local, MPI_Comm comm);
 
 // Get value x[col], either local or ghost, using the pattern.
 double ghost_get_x(const GhostPattern *gp, const double *x, int col);
 
 int ghost_get_total_ghosts(const GhostPattern *gp);
 
-//void ghost_local_SpMV_old(int my_M, int *my_row_pnt, int *my_cols, double *my_vals, GhostPattern *gp, double *v_local, double *y);
-
-void ghost_local_SpMV(const SparseMatrixCSR *matrix, const double *x_extended, double *y_local, int n_local);
-
-void ghost_renumber_columns(SparseMatrixCSR *matrix, GhostPattern *gp, int N_global, int n_local);
+void ghost_local_SpMV(int my_M, int *my_row_pnt, int *my_cols, double *my_vals, GhostPattern *gp, double *v_local, double *y);
 
 
 // Free all memory allocated
