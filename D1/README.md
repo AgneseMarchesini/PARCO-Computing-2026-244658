@@ -9,7 +9,7 @@
   <a href="https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git">
   </a>
 
-  <h1 align="center">Sparse Matrix-Vector Multiplication Optimization</h1>
+  <h1 align="center">Sparse Matrix-Vector Multiplication Optimization using OpenMP</h1>
 
   <p align="center">
     Marchesini Agnese 244658

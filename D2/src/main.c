@@ -9,11 +9,13 @@
 #include <mpi.h>
 #include <time.h>
 
-int main(int argc, char *argv[]){
-    double start, end;
-    double time_comm = 0.0;
-    double time_comp = 0.0;
+// for qsort
+int compare_doubles(const void *a, const void *b);
 
+// calculate percentile from sorted array 
+double percentile(double *sorted_array, int n, double p);
+
+int main(int argc, char *argv[]){
     int rank, size;
 
     MPI_Init(&argc, &argv);
@@ -91,19 +93,23 @@ int main(int argc, char *argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD); // sync before counting time
 
-    int iterations = 10;
+    int iterations = 100;
+    double start, end;
+    double *times_comm = (double*)malloc(iterations * sizeof(double));
+    double *times_comp = (double*)malloc(iterations * sizeof(double));
+
     for(int i=0; i<iterations; i++){
 
         GET_TIME(start);
         ghost_exchange_values(&gp, v_local, MPI_COMM_WORLD);
         GET_TIME(end);
 
-        time_comm += (end - start);
+        times_comm[i] = (end - start) * 1000.0; //ms
 
         GET_TIME(start);
         ghost_local_SpMV(local.my_M, local.my_row_pnt, local.my_cols, local.my_vals, &gp, v_local, y);
         GET_TIME(end);
-        time_comp += (end - start);
+        times_comp[i] = (end - start) * 1000.0; //ms
     }
 
     double checksum = 0.0;
@@ -115,16 +121,19 @@ int main(int argc, char *argv[]){
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    double avg_comm = (time_comm * 1000.0) / iterations;
-    double avg_comp = (time_comp * 1000.0) / iterations;
+    qsort(times_comm, iterations, sizeof(double), compare_doubles);
+    qsort(times_comp, iterations, sizeof(double), compare_doubles);
+
+    double p90_comm = percentile(times_comm, iterations, 0.90);
+    double p90_comp = percentile(times_comp, iterations, 0.90);
 
     // Calculate the max time among all processes
     //MPI_Reduce( const void* sendbuf , void* recvbuf , MPI_Count count , MPI_Datatype datatype , MPI_Op op , int root , MPI_Comm comm);
 
     double max_comm = 0.0;
     double max_comp = 0.0;
-    MPI_Reduce(&avg_comm, &max_comm, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&avg_comp, &max_comp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&p90_comm, &max_comm, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&p90_comp, &max_comp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     double local_mem = (local.my_nz * sizeof(double) + local.my_nz * sizeof(int) + (local.my_M+1) * sizeof(int) + local.my_M * sizeof(double)) / 1024.0 / 1024.0;
     double global_mem;
@@ -171,4 +180,24 @@ int main(int argc, char *argv[]){
     free(displs_vec);
     MPI_Finalize();
     return 0;
+}
+
+// for qsort
+int compare_doubles(const void *a, const void *b) {
+    double diff = (*(double*)a - *(double*)b);
+    if (diff < 0) return -1;
+    if (diff > 0) return 1;
+    return 0;
+}
+
+// calculate percentile from sorted array 
+double percentile(double *sorted_array, int n, double p) {
+    double index = p * (n - 1);
+    int lower = (int)index;
+    int upper = lower + 1;
+    
+    if (upper >= n) return sorted_array[n-1];
+    
+    double weight = index - lower;
+    return sorted_array[lower] * (1.0 - weight) + sorted_array[upper] * weight;
 }
