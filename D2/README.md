@@ -60,7 +60,8 @@ In this project we use MPI to benchmark communication and computation time, GFLO
   ├── results/                         # Benchmark CSV outputs
   ├── scripts/                         # Helper scripts
   │   ├── *_scaling.pbs                # Job submissions
-  │   ├── *_benchmark.sh               # 
+  │   ├── benchmark_*.sh               # Benchmark locally
+  │   ├── set_up_matrices.sh           # Download/generate the matrices in the data folder
   │   ├── generate_weak_matrices.py    # Python script for synthetic matrices
   │   └── plots_*.py                   # Python scripts for generating plots
   ├── src/                             # Source code
@@ -86,13 +87,11 @@ Before running the project, ensure you have the following installed:
 
 * **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/`) for parsing `.mtx` files.
 
-* (Optional, only for plotting) **Python**;
+* **Python** for generating synthetic matrices and plots;
 
 ### Instructions
 
 Here are the instructions to reproduce the project locally or in the Unitn cluster:
-
-!!!!!!!!!!!!!!!!
 
 1. Clone the repo:
 
@@ -100,7 +99,12 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
     git clone https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git
 ```
 
-2. Download manually from the `data` github directory the five matrices used;
+2. Inside "PARCO-Computing-2026-244658" run the script to download/generate the matrices needed:
+
+    ```sh
+        chmod +x D2/scripts/set_up_matrices.sh
+        D2/scripts/set_up_matrices.sh
+    ```
 
 3. Replace the existing pointers in the cloned `data` folder with the actual matrix files;
 
@@ -109,41 +113,43 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
     a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions:
 
       ```sh
-          chmod +x /scripts/*.sh
-          /scripts/time_benchmark.sh 
-          /scripts/perf_benchmark.sh
+          chmod +x D2/scripts/*.sh
+          D2/scripts/benchmark_strong_scaling.sh
+          D2/scripts/benchmark_weak_scaling.sh
       ```
 
     b. If you are in the cluster you can submit the jobs with:
 
       ```sh
-          qsub /scripts/pbs_script_perf.pbs
-          qsub /scripts/pbs_scripts_time.pbs
+          qsub D2/scripts/strong_scaling.pbs
+          qsub D2/scripts/weak_scaling.pbs
       ```
 
-    c. If you prefer to run specific tests manually without the scripts:
+    c. If you prefer to run specific tests manually without the scripts (always from the "PARCO-Computing-2026-244658" directory):
 
       * Compile
 
           ```sh
-              gcc -Wall -O3 -fopenmp ./src/main.c ./src/mmio.c ./src/matrix.c -o spmv -lm
+              mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distribution.c -o spmv
           ```
 
       * Run
 
           ```sh
-              ./spmv <matrix_file.mtx> <scheduling mode> <chunk size> <threads> <number_of_runs>
-              # Scheduling modes: seq (runs the sequential version), static, dynamic, guided
+              mpirun -np <procs> ./spmv D2/data/<dir>/<matrix>.mtx
+              # <procs> = number of processes
+              # <dir> = either strong_scaling_matrices or weak_scaling_matrices
+              # <matrix> = matrix name 
 
               # Example:
-              ./spmv data/af23560.mtx static 100 16 10
+               mpirun -np 4 ./spmv D2/data/strong_scaling_matrices/venkat25.mtx
           ```
       
       Notice: in this case the results will be printed to standard output, they won't show up in the `/results` folder as the following steps mention.
 
 5. Results will be saved in the `/results` folder in csv format;
 
-6. To plot the results you can use the python scripts in the `/scripts` directory, they will create visual plots in the `/plots` folder.
+6. To plot the results you can use the python scripts in the `/scripts` directory (`plots_*.py`), they will create visual plots in the `/plots` folder.
 
 ### Datasets
 The project benchmarks the following matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/):
