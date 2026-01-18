@@ -70,9 +70,7 @@ We implemented distributed SpMV using **MPI** with **1D cyclic row partitioning*
 
 ```text
   .
-  ├── data/                            # Matrix market files (.mtx) used for testing
-  |   ├── strong_scaling_matrices      # 
-  │   └── weak_scaling_matrices        # 
+  ├── data/                            # Matrices folder
   ├── plots/                           # Generated performance graphs
   ├── results/                         # Benchmark CSV outputs
   ├── scripts/                         # Helper scripts
@@ -100,9 +98,9 @@ Before running the project, ensure you have the following installed:
 
 * **MPI** (MPICH) support, required for parallel execution;
 
-* **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/`) for parsing `.mtx` files.
+* **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/`) for parsing `.mtx` files;
 
-* **Python** for generating synthetic matrices and plots;
+* **Python** for generating synthetic matrices and plots.
 
 ### Instructions
 
@@ -172,8 +170,8 @@ The project benchmarks the following matrices from the [SuiteSparse Matrix Colle
 | **venkat25** | 62,424 | 62,424 | 1,717,763 | 0.04408 | 49,930 |
 | **atmosmodl** | 1,489,752 | 1,489,752 | 10,319,760 | 0.00046 | 214,022 |
 | **rajat31** | 4,690,002 | 4,690,002 | 20,316,253 | 0.00009 | 619,885 |
-| **circuit5M** | 1,489,752 | 1,489,752 | 10,319,760 | 0.00046 | 214,022 |
-| **cage15** | 3,428,755 | 3,428,755 | 17,052,626 | 0.00015 | 632,885 |
+| **circuit5M** | 5,558,326 | 5,558,326 | 59,524,291 | 0.00019 | 2,114,015 |
+| **cage15** | 5,154,859 | 5,154,859 | 99,199,551 | 0.00037 | 2,566,142 |
 
 **Note:** Ensure the downloaded `.mtx` files are placed inside the `data/` directory.
 

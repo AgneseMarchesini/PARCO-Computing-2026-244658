@@ -1,3 +1,4 @@
 # Ignore the compiled executable
 D1/spmv.exe
-D2/data
+D2/data/strong_scaling_matrices
+D2/data/weak_scaling_matrices
