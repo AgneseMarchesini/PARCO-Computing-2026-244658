@@ -23,7 +23,7 @@ PERF_CSV="$RESULTS_DIR/perf_results.csv"
 # Events to measure
 PERF_EVENTS="cache-misses,cache-references,LLC-load-misses,instructions,cycles"
 
-gcc -Wall -O3 -fopenmp src/main.c src/matrix.c src/mmio.c -o spmv -lm
+gcc -Wall -O3 -fopenmp D1/src/main.c D1/src/matrix.c D1/src/mmio.c -o spmv -lm
 
 # Setup
 mkdir -p $RESULTS_DIR
