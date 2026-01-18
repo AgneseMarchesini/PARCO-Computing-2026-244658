@@ -5,8 +5,8 @@ from pathlib import Path
 import matplotlib.ticker as ticker 
 
 # --- Configuration (Copied from your script) ---
-RESULTS_DIR = Path("results")
-PLOTS_DIR = Path("plots")
+RESULTS_DIR = Path("D1/results")
+PLOTS_DIR = Path("D1/plots")
 RESULTS_CSV = RESULTS_DIR / "time_results.csv"
 CHUNK_SIZES_TO_PLOT = [1, 10, 100, 1000] 
 THREADS_TO_PLOT = [1, 2, 4, 8, 16, 32, 64] # Will filter out 1 thread for parallel plots

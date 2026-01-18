@@ -40,7 +40,24 @@
 
 Efficiently parallelizing Sparse Matrix-Vector (SpMV) multiplication is a significant challenge due to workload imbalance and irregular memory access patterns.
 
-In this project we use MPI to benchmark communication and computation time, GFLOPs and communication volume per rank. We analyzed Strong Scaling metrics on real matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/) and Weak Scaling on syntethic matrices.
+We implemented distributed SpMV using **MPI** with **1D cyclic row partitioning**. We benchmarked Strong Scaling metrics on real matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/) and Weak Scaling on syntethic matrices:
+
+- **Strong Scaling**: Fixed problem size, increasing processes (1-128)
+- **Weak Scaling**: Proportional problem growth with processes
+
+### Parallelization Strategy
+
+* **1D Cyclic Row Distribution**: Rows assigned round-robin to processes
+* **Ghost Pattern**: Pre-computed communication pattern for off-process elements
+* **MPI Collectives**: `MPI_Allgatherv` for initial distribution, point-to-point for ghost exchange
+
+### Performance Metrics
+
+* **T_Comm**: P90 percentile of communication time (ghost exchange)
+* **T_Comp**: P90 percentile of computation time (local SpMV)
+* **GFLOPS**: Floating-point operations per second (2 × NNZ / T_Comp)
+* **Load Balance**: max_NZ / avg_NZ across ranks
+* **Communication Volume**: Ghost entries × 8 bytes per rank
 
 ### Key Results
 
@@ -67,8 +84,8 @@ In this project we use MPI to benchmark communication and computation time, GFLO
   ├── src/                             # Source code
   │   ├── main.c                       # Main code where SpMV is used
   │   ├── mmio.c                       # Matrix Market I/O helper
-  │   ├── distribution.c               # 
-  │   ├── ghost_emtries.c              # 
+  │   ├── distribution.c               # Cyclic row distribution across MPI ranks
+  │   ├── ghost_entries.c              # Ghost pattern building and communication
   |   └── matrix.c                     # SpMV implementation
   └── README.md
 ```
@@ -81,9 +98,7 @@ In this project we use MPI to benchmark communication and computation time, GFLO
 
 Before running the project, ensure you have the following installed:
 
-!!!!!!!
-
-* **GCC Compiler** with **OpenMP** support, required for parallel execution;
+* **MPI** (MPICH) support, required for parallel execution;
 
 * **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/`) for parsing `.mtx` files.
 
@@ -106,9 +121,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
         D2/scripts/set_up_matrices.sh
     ```
 
-3. Replace the existing pointers in the cloned `data` folder with the actual matrix files;
-
-4. Now you have two options based on where you want to run the program:
+3. Now you have two options based on where you want to run the program:
 
     a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions:
 
@@ -147,20 +160,20 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
       
       Notice: in this case the results will be printed to standard output, they won't show up in the `/results` folder as the following steps mention.
 
-5. Results will be saved in the `/results` folder in csv format;
+4. Results will be saved in the `/results` folder in csv format;
 
-6. To plot the results you can use the python scripts in the `/scripts` directory (`plots_*.py`), they will create visual plots in the `/plots` folder.
+5. To plot the results you can use the python scripts in the `/scripts` directory (`plots_*.py`), they will create visual plots in the `/plots` folder.
 
 ### Datasets
 The project benchmarks the following matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/):
 
 | Matrix Name | Rows | Columns | Non-zeros | Sparsity [%] | File size [KB] |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **af23560** | 23,560 | 23,560 | 460,598 | 0.08298 | 15,164 |
-| **twotone** | 120,750 | 120,750 | 1,206,265 | 0.00827 | 24,107 |
-| **tmt_unsym** | 917,825 | 917,825 | 4,584,801 | 0.00054 | 145,259 |
+| **venkat25** | 62,424 | 62,424 | 1,717,763 | 0.04408 | 49,930 |
 | **atmosmodl** | 1,489,752 | 1,489,752 | 10,319,760 | 0.00046 | 214,022 |
-| **Freescale1** | 3,428,755 | 3,428,755 | 17,052,626 | 0.00015 | 632,885 |
+| **rajat31** | 4,690,002 | 4,690,002 | 20,316,253 | 0.00009 | 619,885 |
+| **circuit5M** | 1,489,752 | 1,489,752 | 10,319,760 | 0.00046 | 214,022 |
+| **cage15** | 3,428,755 | 3,428,755 | 17,052,626 | 0.00015 | 632,885 |
 
 **Note:** Ensure the downloaded `.mtx` files are placed inside the `data/` directory.
 

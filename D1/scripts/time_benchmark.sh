@@ -8,7 +8,7 @@ MATRICES=(
     "atmosmodl.mtx"
     "Freescale1.mtx"
 )
-DATA_DIR="data"
+DATA_DIR="D1/data"
 MODES=(
     #"seq" handled separately
     "static"
@@ -18,11 +18,11 @@ MODES=(
 CHUNK_SIZE=(1 10 100 1000)
 THREADS=(1 2 4 8 16 32 64)
 NUM_RUNS=10
-RESULTS_DIR="results"
+RESULTS_DIR="D1/results"
 RESULTS_CSV="$RESULTS_DIR/time_results.csv"
 
 # Compile the program
-gcc -Wall -O3 -fopenmp src/main.c src/matrix.c src/mmio.c -o spmv -lm
+gcc -Wall -O3 -fopenmp D1/src/main.c D1/src/matrix.c D1/src/mmio.c -o spmv -lm
 
 # Clear results file
 echo "Matrix,Mode,ChunkSize,Threads,Time_ms" > $RESULTS_CSV

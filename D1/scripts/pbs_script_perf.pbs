@@ -28,7 +28,7 @@ MATRICES=(
     "atmosmodl.mtx"
     "Freescale1.mtx"
 )
-DATA_DIR="data"
+DATA_DIR="D1/data"
 MODES=(
     "static"
     "dynamic"
@@ -37,14 +37,14 @@ MODES=(
 CHUNK_SIZE=(1 10 100 1000)
 THREADS=(1 2 4 8 16 32 64)
 NUM_RUNS=1
-RESULTS_DIR="results"
+RESULTS_DIR="D1/results"
 PERF_CSV="$RESULTS_DIR/perf_results.csv"
 PERF_RUNS=5
 
 # Events to measure
 PERF_EVENTS="cache-misses,cache-references,LLC-load-misses,instructions,cycles"
 
-gcc-9.1.0 -Wall -O3 -fopenmp src/main.c src/matrix.c src/mmio.c -o spmv -lm
+gcc-9.1.0 -Wall -O3 -fopenmp D1/src/main.c D1/src/matrix.c D1/src/mmio.c -o spmv -lm
 
 # Setup
 mkdir -p $RESULTS_DIR

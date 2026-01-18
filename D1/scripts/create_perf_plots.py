@@ -180,8 +180,8 @@ if __name__ == "__main__":
         script_dir = os.path.dirname(os.path.realpath(__file__))
         project_root = os.path.dirname(script_dir)
         
-        results_dir = os.path.join(project_root, 'results')
-        plots_dir = os.path.join(project_root, 'plots')
+        results_dir = os.path.join(project_root, 'D1/results')
+        plots_dir = os.path.join(project_root, 'D1/plots')
 
         # Define the single, known CSV file name
         csv_name = 'perf_results.csv'

@@ -8,7 +8,7 @@ MATRICES=(
     "atmosmodl.mtx"
     "Freescale1.mtx"
 )
-DATA_DIR="data"
+DATA_DIR="D1/data"
 MODES=(
     "static"
     "dynamic"
@@ -17,7 +17,7 @@ MODES=(
 CHUNK_SIZE=(1 10 100 1000)
 THREADS=(1 2 4 8 16 32 64)
 NUM_RUNS=1 
-RESULTS_DIR="results"
+RESULTS_DIR="D1/results"
 PERF_CSV="$RESULTS_DIR/perf_results.csv"
 
 # Events to measure
