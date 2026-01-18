@@ -71,13 +71,13 @@ We implemented distributed SpMV using **MPI** with **1D cyclic row partitioning*
 ```text
   .
   ├── data/                            # Matrices folder
+  │   ├── set_up_matrices.sh           # Download/generate the matrices in the data folder
+  │   └── generate_weak_matrices.py    # Python script for synthetic matrices
   ├── plots/                           # Generated performance graphs
   ├── results/                         # Benchmark CSV outputs
   ├── scripts/                         # Helper scripts
   │   ├── *_scaling.pbs                # Job submissions
   │   ├── benchmark_*.sh               # Benchmark locally
-  │   ├── set_up_matrices.sh           # Download/generate the matrices in the data folder
-  │   ├── generate_weak_matrices.py    # Python script for synthetic matrices
   │   └── plots_*.py                   # Python scripts for generating plots
   ├── src/                             # Source code
   │   ├── main.c                       # Main code where SpMV is used
@@ -108,16 +108,16 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
 
 1. Clone the repo:
 
-```sh
-    git clone https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git
-```
+  ```sh
+      git clone https://github.com/AgneseMarchesini/PARCO-Computing-2026-244658.git
+  ```
 
 2. Inside "PARCO-Computing-2026-244658" run the script to download/generate the matrices needed:
 
-    ```sh
-        chmod +x D2/scripts/set_up_matrices.sh
-        D2/scripts/set_up_matrices.sh
-    ```
+  ```sh
+      chmod +x D2/scripts/set_up_matrices.sh
+      D2/scripts/set_up_matrices.sh
+  ```
 
 3. Now you have two options based on where you want to run the program:
 
@@ -173,7 +173,7 @@ The project benchmarks the following matrices from the [SuiteSparse Matrix Colle
 | **circuit5M** | 5,558,326 | 5,558,326 | 59,524,291 | 0.00019 | 2,114,015 |
 | **cage15** | 5,154,859 | 5,154,859 | 99,199,551 | 0.00037 | 2,566,142 |
 
-**Note:** Ensure the downloaded `.mtx` files are placed inside the `data/` directory.
+**Note:** Ensure the `.mtx` files are placed inside the right `data/` directory.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -66,11 +66,9 @@ ax1.legend(loc='best', fontsize=12)
 for mat in MATRIX_ORDER:
     if mat in df_strong['Matrix'].unique():
         subset = df_strong[df_strong['Matrix'] == mat].sort_values('Processes')
-        
         yerr_lower = subset['NZ_Avg'] - subset['NZ_Min']
         yerr_upper = subset['NZ_Max'] - subset['NZ_Avg']
         yerr = [yerr_lower, yerr_upper]
-        
         ax2.errorbar(subset['Processes'], subset['NZ_Avg'],
                      yerr=yerr, marker='o', linewidth=2,
                      markersize=6, capsize=4, capthick=2,
@@ -84,9 +82,11 @@ ax2.set_yscale('log')
 ax2.set_xticks(ticks_x)
 ax2.set_xticklabels(ticks_x)
 ax2.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
-ax2.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+# Remove the y-axis formatter lines - let log scale use default
 ax2.grid(True, which="both", ls="-", alpha=0.3)
 ax2.legend(title="Matrices", loc='best', fontsize=11)
+
+
 
 plt.tight_layout()
 out_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)

@@ -4,7 +4,7 @@ echo "Matrix Download"
 
 STRONG_DIR="D2/data/strong_scaling_matrices"
 WEAK_DIR="D2/data/weak_scaling_matrices"
-SCRIPT_DIR="D2/scripts"
+SCRIPT_DIR="D2/data"
 
 mkdir -p $STRONG_DIR
 mkdir -p $WEAK_DIR

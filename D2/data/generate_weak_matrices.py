@@ -1,5 +1,5 @@
 # run this script in the root folder PARCO-2026-2445658
-# python3 .\D2\scripts\generate_weak_matrices.py
+# python3 .\D2\data\generate_weak_matrices.py
 
 import os
 import random

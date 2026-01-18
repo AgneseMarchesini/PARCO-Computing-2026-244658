@@ -4,6 +4,7 @@ import os
 import numpy as np
 import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
+import matplotlib.ticker as ticker
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
@@ -95,6 +96,7 @@ for col_idx, mat in enumerate(MATRIX_ORDER):
         ax.set_xticks(x_indices)
         ax.set_xticklabels(processes)
         ax.grid(axis='y', linestyle='--', alpha=0.5)
+        ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=12))
         
         legend_elements = [
             Patch(facecolor=base_color, label='Comp'),
