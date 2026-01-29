@@ -41,7 +41,7 @@ ticks_x = [1, 2, 4, 8, 16, 32, 64, 128]
 # Weak Scaling (Left)
 ax1.plot(df_weak['Processes'], df_weak['Volume_MB'],
          'ro-', linewidth=3, markersize=10, label='Weak Scaling')
-ax1.set_title('Weak Scaling: Ghost Volume', fontsize=16, fontweight='bold')
+ax1.set_title('Weak Scaling', fontsize=16, fontweight='bold')
 ax1.set_xlabel('Number of Processes', fontsize=14)
 ax1.set_ylabel('Communication Volume (MB/rank)', fontsize=14)
 ax1.set_xscale('log')
@@ -58,7 +58,7 @@ for mat in MATRIX_ORDER:
         ax2.plot(subset['Processes'], subset['Volume_MB'],
                  marker='o', linewidth=2, markersize=6, label=mat)
 
-ax2.set_title('Strong Scaling: Ghost Volume', fontsize=16, fontweight='bold')
+ax2.set_title('Strong Scaling', fontsize=16, fontweight='bold')
 ax2.set_xlabel('Number of Processes', fontsize=14)
 ax2.set_ylabel('Communication Volume (MB/rank)', fontsize=14)
 ax2.set_xscale('log')

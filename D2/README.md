@@ -115,8 +115,8 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
 2. Inside "PARCO-Computing-2026-244658" run the script to download/generate the matrices needed:
 
   ```sh
-      chmod +x D2/scripts/set_up_matrices.sh
-      D2/scripts/set_up_matrices.sh
+      chmod +x D2/data/set_up_matrices.sh
+      D2/data/set_up_matrices.sh
   ```
 
 3. Now you have two options based on where you want to run the program:

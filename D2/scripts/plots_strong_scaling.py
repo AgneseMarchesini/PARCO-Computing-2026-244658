@@ -89,7 +89,7 @@ def create_plot(df, output_filename):
     # ========== Plot 1: Total Execution Time ==========
     ax1.set_title('Strong Scaling: Total Execution Time', fontsize=14, fontweight='bold')
     ax1.set_xlabel('Number of Processes', fontsize=12)
-    ax1.set_ylabel('Total Time (s)', fontsize=12)
+    ax1.set_ylabel('Total Time (ms)', fontsize=12)
     ax1.yaxis.set_major_locator(ticker.MaxNLocator(nbins=10))
     ax1.set_xscale('log')
     ax1.set_xticks(ticks_x)

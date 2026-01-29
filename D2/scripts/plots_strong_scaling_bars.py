@@ -91,7 +91,7 @@ for col_idx, mat in enumerate(MATRIX_ORDER):
         ax.set_xlabel('Processes', fontsize=11)
         
         if col_idx == 0:
-            ax.set_ylabel('Time (s)', fontsize=12, fontweight='bold')
+            ax.set_ylabel('Time (ms)', fontsize=12, fontweight='bold')
         
         ax.set_xticks(x_indices)
         ax.set_xticklabels(processes)
