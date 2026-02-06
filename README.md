@@ -20,8 +20,8 @@ This repository contains the material for the exam "Introduction to Parallel Com
 
 ```text
   .
-  ├── D1          # Deliverable 1 material
-  ├── D2          # Deliverable 2 material  
+  ├── D1          # Deliverable 1 material (OpenMP)
+  ├── D2          # Deliverable 2 material (MPI)
   └── README.md
 ```
 
