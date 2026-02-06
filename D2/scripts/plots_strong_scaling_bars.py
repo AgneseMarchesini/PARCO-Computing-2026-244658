@@ -99,8 +99,8 @@ for col_idx, mat in enumerate(MATRIX_ORDER):
         ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=12))
         
         legend_elements = [
-            Patch(facecolor=base_color, label='Comp'),
-            Patch(facecolor=darker_color, label='Comm')
+            Patch(facecolor=base_color, label='Computation'),
+            Patch(facecolor=darker_color, label='Communication')
         ]
         ax.legend(handles=legend_elements, loc='upper right', fontsize=9)
     else:

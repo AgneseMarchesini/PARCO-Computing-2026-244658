@@ -24,10 +24,10 @@
       <a href="#about-the-project">About The Project</a>
     </li>
     <li>
-      <a href="#project-structure">Project Structure</a></li>
+      <a href="#project-structure">Project Structure</a>
     </li>
     <li>
-      <a href="#reproducibility">Reproducibility</a></li>
+      <a href="#reproducibility">Reproducibility</a>
     </li>
     <li><a href="#contact">Contact</a></li>
   </ol>
@@ -40,16 +40,17 @@
 
 Efficiently parallelizing Sparse Matrix-Vector (SpMV) multiplication is a significant challenge due to workload imbalance and irregular memory access patterns.
 
-We implemented distributed SpMV using **MPI** with **1D cyclic row partitioning**. We benchmarked Strong Scaling metrics on real matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/) and Weak Scaling on syntethic matrices:
+We implemented distributed SpMV using **MPI** with **1D cyclic row partitioning**. We benchmarked strong scaling metrics on real matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/) and weak scaling on synthetic matrices:
 
 - **Strong Scaling**: Fixed problem size, increasing processes (1-128)
 - **Weak Scaling**: Proportional problem growth with processes
 
 ### Parallelization Strategy
 
-* **1D Cyclic Row Distribution**: Rows assigned round-robin to processes
-* **Ghost Pattern**: Pre-computed communication pattern for off-process elements
-* **MPI Collectives**: `MPI_Allgatherv` for initial distribution, point-to-point for ghost exchange
+* **Data Format:** Compressed Sparse Row (CSR)
+* **1D Cyclic Row Distribution**: Rows are assigned to ranks using `row_index % P` in a cyclic manner
+* **Ghost Pattern**: Dynamically mapped at runtime using `MPI_Alltoall` to identify off-process dependencies.
+* **MPI Collectives**: Initial setup uses `MPI_Bcast` for global dimensions, followed by point-to-point distribution of row data, and Collectives (`MPI_Alltoallv`) for ghost exchange.
 
 ### Performance Metrics
 
@@ -61,31 +62,40 @@ We implemented distributed SpMV using **MPI** with **1D cyclic row partitioning*
 
 ### Key Results
 
-* **Performance:** a
-* **Bottleneck:** b
+* **Performance:**
+
+  * Achieved a maximum speedup of **11.9x** on 64 processes for the `venkat25`
+  * Reached a peak computational throughput of **28.85 GFLOPS**
+  * Weak scaling demonstrated near-ideal algorithmic scalability, maintaining constant local computation time and a steady ghost overhead of ~0.017 MB/rank
+
+* **Bottleneck:** 
+
+  * **Strong Scaling:** Performance was constrained by **communication latency** for structured matrices (e.g., `atmosmodl`) and **load imbalance** for highly unstructured ones (e.g., `circuit5M`), highlighting the limits of 1D partitioning for irregular sparsity patterns
+  * **Weak Scaling:** Parallel efficiency decreased at scale due to **latency dominance**; the small fixed local workload (approx. 2,560 nonzeros per rank) was insufficient to hide the latency cost of establishing communication via `MPI_Alltoallv`
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Project Structure
 
 ```text
-  .
-  ├── data/                            # Matrices folder
-  │   ├── set_up_matrices.sh           # Download/generate the matrices in the data folder
-  │   └── generate_weak_matrices.py    # Python script for synthetic matrices
-  ├── plots/                           # Generated performance graphs
-  ├── results/                         # Benchmark CSV outputs
-  ├── scripts/                         # Helper scripts
-  │   ├── *_scaling.pbs                # Job submissions
-  │   ├── benchmark_*.sh               # Benchmark locally
-  │   └── plots_*.py                   # Python scripts for generating plots
-  ├── src/                             # Source code
-  │   ├── main.c                       # Main code where SpMV is used
-  │   ├── mmio.c                       # Matrix Market I/O helper
-  │   ├── distribution.c               # Cyclic row distribution across MPI ranks
-  │   ├── ghost_entries.c              # Ghost pattern building and communication
-  |   └── matrix.c                     # SpMV implementation
-  └── README.md
+  └── D2/
+      ├── data/                            # Matrices folder
+      │   ├── set_up_matrices.sh           # Download/generate the matrices in the data folder
+      │   └── generate_weak_matrices.py    # Python script for synthetic matrices
+      ├── plots/                           # Generated performance graphs
+      ├── results/                         # Benchmark CSV outputs
+      ├── scripts/                         # Helper scripts
+      │   ├── *_scaling.pbs                # Job submissions
+      │   ├── benchmark_*.sh               # Benchmark locally
+      │   └── plots_*.py                   # Python scripts for generating plots
+      ├── src/                             # Source code
+      │   ├── main.c                       # Main code where SpMV is used
+      │   ├── mmio.c                       # Matrix Market I/O helper
+      │   ├── distribution.c               # Cyclic row distribution across MPI ranks
+      │   ├── ghost_entries.c              # Ghost pattern building and communication
+      |   └── matrix.c                     # SpMV implementation
+      ├── include/ 
+      └── README.md
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -98,9 +108,9 @@ Before running the project, ensure you have the following installed:
 
 * **MPI** (MPICH) support, required for parallel execution;
 
-* **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/`) for parsing `.mtx` files;
+* **NIST Matrix Market I/O**: The project uses the `mmio.c` and `mmio.h` library (included in `src/` and `include/`) for parsing `.mtx` files;
 
-* **Python** for generating synthetic matrices and plots.
+* **Python** for generating synthetic matrices and plots, with **matplotlib**, **pandas** and **numpy**.
 
 ### Instructions
 
@@ -121,7 +131,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
 
 3. Now you have two options based on where you want to run the program:
 
-    a. If you want to run it locally you can run the shell scripts, making sure you have executed the permissions:
+    a. If you want to run it locally, you can run the shell scripts, making sure you have executed the permissions:
 
       ```sh
           chmod +x D2/scripts/*.sh
