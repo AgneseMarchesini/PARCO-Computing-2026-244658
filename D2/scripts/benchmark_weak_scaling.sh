@@ -3,16 +3,9 @@
 # Remember chmod +x D2/scripts/benchmark_weak_scaling.sh
 
 EXECUTABLE="./spmv"
-MATRICES=(
-    "venkat25.mtx"
-    "atmosmodl.mtx"
-    "rajat31.mtx"
-    "circuit5M.mtx"
-    "cage15.mtx"
-)
-DATA_DIR="D2/data/strong_scaling_matrices"
+DATA_DIR="D2/data/weak_scaling_matrices"
 RESULTS_DIR="D2/results"
-STRONG_SCALING_CSV="$RESULTS_DIR/strong_scaling_local.csv"
+WEAK_SCALING_CSV="$RESULTS_DIR/weak_scaling_local.csv"
 
 module load mpich-3.2.1--gcc-9.1.0 || { echo "module load failed"; exit 1; }
 mpicc -O3 -Wall -ID2/include D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distribution.c -o spmv || { echo "Compilation failed"; exit 1; }
@@ -21,17 +14,17 @@ chmod +x ./spmv
 # Setup
 mkdir -p $RESULTS_DIR
 
-echo "Matrix,Processes,T_Comm,T_Comp,Tot_Time,GFLOPS,Mem_MB,NZ_Min,NZ_Max,NZ_Avg,Volume_MB" > $STRONG_SCALING_CSV
+echo "Matrix,Processes,T_Comm,T_Comp,Tot_Time,GFLOPS,Mem_MB,NZ_Min,NZ_Max,NZ_Avg,Volume_MB" > $WEAK_SCALING_CSV
 
-for MATRIX_NAME in "${MATRICES[@]}"
+for P in 1 2 4 8 16 32 64 128
 do
-    for P in 1 2 4 8 16 32 64 128
-    do
-        echo "Running with $P processes..."
+    ROWS=$((256 * P))
+    MATRIX_NAME="weak_${P}p_${ROWS}.mtx"
+    echo "Running with $P processes... ($MATRIX_NAME)"
 
-        OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
-
-        STATS_LINE=$(echo "$OUTPUT" | grep "STATS:")
+    OUTPUT=$(mpirun -np $P $EXECUTABLE "$DATA_DIR/$MATRIX_NAME")
+    
+    STATS_LINE=$(echo "$OUTPUT" | grep "STATS:")
         
         # printf("STATS: %f %f %f %f %f %d %d %f %f", max_comm, max_comp, total_time, gflops, global_mem, min_nz, max_nz, avg_nz, max_comm_volume/(1024.0*1024.0));
 
@@ -45,6 +38,5 @@ do
         NZ_AVG=$(echo "$STATS_LINE" | awk '{print $9}')
         VOLUME=$(echo "$STATS_LINE" | awk '{print $10}')
 
-        echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$TOT_TIME,$GFLOPS,$MEM_MB,$NZ_MIN,$NZ_MAX,$NZ_AVG,$VOLUME" >> $STRONG_SCALING_CSV
-    done
+    echo "$MATRIX_NAME,$P,$TIME_COMM,$TIME_COMP,$TOT_TIME,$GFLOPS,$MEM_MB,$NZ_MIN,$NZ_MAX,$NZ_AVG,$VOLUME" >> $WEAK_SCALING_CSV
 done
