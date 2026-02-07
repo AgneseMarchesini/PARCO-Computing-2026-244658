@@ -170,7 +170,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
 
 4. Results will be saved in the `/results` folder in csv format;
 
-5. To plot the results you can use the python scripts in the `/scripts` directory (`plots_*.py`), they will create visual plots in the `/plots` folder.
+5. To plot the results you can use the python scripts in the `/scripts` directory (`plots_*.py`), they will create visual plots in the `/plots` folder from the jobs results.
 
 ### Datasets
 The project benchmarks the following matrices from the [SuiteSparse Matrix Collection](https://sparse.tamu.edu/):
