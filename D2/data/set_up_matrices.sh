@@ -48,7 +48,11 @@ download_matrix() {
     echo "Extracting..."
     tar -xzf "$TAR_FILE" -C "$EXTRACT_DIR" 2>/dev/null
 
-    MTX_FILE=$(find "$EXTRACT_DIR" -name "*.mtx" | head -1)
+    MTX_FILE=$(find "$EXTRACT_DIR" -name "*.mtx" \
+           ! -name "*_b.mtx" \
+           ! -name "*_x.mtx" \
+           -exec grep -l "matrix coordinate" {} \; | head -1)
+
 
     if [ -n "$MTX_FILE" ]; then
         mv "$MTX_FILE" "$FULL_PATH"
