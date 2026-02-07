@@ -151,7 +151,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
       * Compile
 
           ```sh
-              mpicc -O3 -Wall D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distribution.c -o spmv
+              mpicc -O3 -Wall -ID2/include D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distribution.c -o spmv
           ```
 
       * Run
