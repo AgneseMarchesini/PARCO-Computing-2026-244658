@@ -14,6 +14,7 @@ DATA_DIR="D2/data/strong_scaling_matrices"
 RESULTS_DIR="D2/results"
 STRONG_SCALING_CSV="$RESULTS_DIR/strong_scaling_local.csv"
 
+module load mpich-3.2.1--gcc-9.1.0 || { echo "module load failed"; exit 1; }
 mpicc -O3 -Wall -ID2/include D2/src/main.c D2/src/matrix.c D2/src/mmio.c D2/src/ghost_entries.c D2/src/distribution.c -o spmv || { echo "Compilation failed"; exit 1; }
 chmod +x ./spmv
 
