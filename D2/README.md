@@ -131,6 +131,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
 
 3. Now you have two options based on where you want to run the program:
 
+    <a id="3a"></a>
     a. If you want to run it locally, you can run the shell scripts, making sure you have executed the permissions:
 
       ```sh
@@ -139,6 +140,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
           D2/scripts/benchmark_weak_scaling.sh
       ```
 
+    <a id="3b"></a>
     b. If you are in the cluster you can submit the jobs with:
 
       ```sh
@@ -168,7 +170,7 @@ Here are the instructions to reproduce the project locally or in the Unitn clust
       
       Notice: in this case the results will be printed to standard output, they won't show up in the `/results` folder as the following steps mention.
 
-4. Results will be saved in the `/results` folder in csv format;
+4. Results will be saved in the `/results` folder in csv format as `*_scaling.csv` from the subtimed jobs ([3b](#3b)), and as `*_scaling_local.csv` if the program was ran locally ([3a](#3a)).
 
 5. To plot the results you can use the python scripts in the `/scripts` directory (`plots_*.py`), they will create visual plots in the `/plots` folder from the jobs results.
 
